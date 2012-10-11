@@ -1,15 +1,17 @@
 <?php
 
 /**
- * Reports engine controller.
+ * Home reports engine controller.
+ *
+ * The meat and potatoes are in reports/controllers/report_core_controller.php.
  *
  * @category   Apps
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,34 +32,40 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
+// D E P E N D E N C I E S
+///////////////////////////////////////////////////////////////////////////////
+
+require_once clearos_app_base('reports') . '/controllers/report_engine_controller.php';
+
+///////////////////////////////////////////////////////////////////////////////
 // C L A S S
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- * Reports engine controller.
+ * Home reports engine controller.
  *
  * @category   Apps
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
-class Report_Controller extends ClearOS_Controller
+class Report_Controller extends Report_Engine_Controller
 {
     /**
      * Reports engine constructor.
      *
-     * @param string $app_name app that manages the report
+     * @param string $report report details
      *
      * @return view
      */
 
-    function __construct($app_name)
+    function __construct($report)
     {
-        $this->app_name = $app_name;
+        parent::__construct($report);
     }
 
     /**
@@ -66,37 +74,8 @@ class Report_Controller extends ClearOS_Controller
      * @return view
      */
 
-    function index()
+    function index($type = 'dashboard')
     {
-    }
-
-    function _get_summary_range()
-    {
-        $this->load->library('reports/Report');
-
-        return $this->report->get_date_range();
-    }
-
-    function _get_summary_ranges()
-    {
-        $this->load->library('reports/Report');
-
-        return $this->report->get_date_ranges();
-    }
-
-    /**
-     * Date range handler.
-     */
-
-    function _handle_range()
-    {
-        if ($this->input->post('report_range'))
-            $this->session->set_userdata('report_sr', $this->input->post('report_range'));
-
-        // FIXME: hard-coded today
-/*
-        if (!$this->session->userdata('report_sr'))
-            $this->session->set_userdata('reports_sr', 'today');
-*/
+        parent::_index($type, 'home_reports');
     }
 }
