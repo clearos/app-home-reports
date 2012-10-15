@@ -1,17 +1,15 @@
 <?php
 
 /**
- * Home reports javascript helper.
- *
- * The standard report helper is all that is required, so pull it in.
+ * Chart view.
  *
  * @category   ClearOS
- * @package    Home_Reports
- * @subpackage Javascript
+ * @package    Reports
+ * @subpackage Views
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/home_reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -31,15 +29,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////
-// B O O T S T R A P
-///////////////////////////////////////////////////////////////////////////////
+$unique_key = $app . '_' . $report;
 
-$bootstrap = getenv('CLEAROS_BOOTSTRAP') ? getenv('CLEAROS_BOOTSTRAP') : '/usr/clearos/framework/shared';
-require_once $bootstrap . '/bootstrap.php';
-
-///////////////////////////////////////////////////////////////////////////////
-// D E P E N D E N C I E S
-///////////////////////////////////////////////////////////////////////////////
-
-require_once clearos_app_base('reports') . '/htdocs/reports.js.php';
+echo summary_table(
+    'Report Data', // FIXME: translate
+    array(),
+    $headers,
+    NULL,
+    array(
+        'id' => $unique_key . '_table',
+        'no_action' => TRUE,
+        'table_size' => 'large',
+        'paginate' => TRUE,
+        'paginate_large' => TRUE,
+        'filter' => TRUE,
+        'default_rows' => 50,
+        'sort-default-col' => 1,
+        'sort-default-dir' => 'desc'
+    )
+);

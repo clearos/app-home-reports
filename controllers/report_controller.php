@@ -76,6 +76,40 @@ class Report_Controller extends Report_Engine_Controller
 
     function index($type = 'dashboard')
     {
-        parent::_index($type, 'home_reports');
+        // parent::_index($type, 'home_reports');
+
+        $this->page->view_report($type, $this->report_info, $report['title'], $options);
+
+    }
+
+    function _get_summary_range()
+    {
+        $this->load->library('home_reports/Report_Driver');
+
+        return $this->report_driver->get_date_range();
+    }
+
+    function _get_summary_ranges()
+    {
+        $this->load->library('home_reports/Report_Driver');
+
+        return $this->report_driver->get_date_ranges();
+    }
+
+
+    /**
+     * Date range handler.
+     */
+
+    function _handle_range()
+    {
+        if ($this->input->post('report_range'))
+            $this->session->set_userdata('report_sr', $this->input->post('report_range'));
+
+        // FIXME: hard-coded today
+/*
+        if (!$this->session->userdata('report_sr'))
+            $this->session->set_userdata('reports_sr', 'today');
+*/
     }
 }
