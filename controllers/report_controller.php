@@ -58,14 +58,19 @@ class Report_Controller extends Report_Engine_Controller
     /**
      * Reports engine constructor.
      *
-     * @param string $report report details
-     *
      * @return view
      */
 
-    function __construct($report)
+    function __construct($app, $library, $report, $reports = array())
     {
-        parent::__construct($report);
+        if (empty($reports))
+            $this->is_overview = FALSE;
+        else
+            $this->is_overview = TRUE;
+
+        $this->reports = $reports;
+
+        parent::__construct($app, $library, $report);
     }
 
     /**
@@ -76,40 +81,93 @@ class Report_Controller extends Report_Engine_Controller
 
     function index($type = 'dashboard')
     {
-        // parent::_index($type, 'home_reports');
+        // Load dependencies
+        //------------------
 
-        $this->page->view_report($type, $this->report_info, $report['title'], $options);
-
-    }
-
-    function _get_summary_range()
-    {
         $this->load->library('home_reports/Report_Driver');
 
-        return $this->report_driver->get_date_range();
+        // Set validation rules
+        //---------------------
+
+        // FIXME: validate
+        $form_ok = TRUE;
+
+        // Handle form submit
+        //-------------------
+
+        if ($this->input->post('report_range') && $form_ok) {
+            try {
+                $this->session->set_userdata('report_range', $this->input->post('report_range'));
+            } catch (Exception $e) {
+                $this->page->view_exception($e);
+                return;
+            }
+        }
+
+        if (! $this->session->userdata('report_range')) {
+            $this->session->set_userdata('report_range', 'today'); // FIXME: hard-coded
+        }
+
+        // Load view data
+        //---------------
+
+        try {
+            $data['report'] = $this->report_info;
+
+            $data['range'] = $this->session->userdata('report_range');
+            $data['ranges'] = $this->report_driver->get_date_ranges();
+
+            $title = $data['report']['title'];
+        } catch (Exception $e) {
+            $this->page->view_exception($e);
+            return;
+        }
+
+        // Load views
+        //-----------
+
+        if ($this->is_overview)
+            $this->page->view_reports($this->reports, $data, $title);
+        else
+            $this->page->view_report($type, $data, $title, $options);
     }
-
-    function _get_summary_ranges()
-    {
-        $this->load->library('home_reports/Report_Driver');
-
-        return $this->report_driver->get_date_ranges();
-    }
-
 
     /**
-     * Date range handler.
+     * Returns raw data from a report.
+     *
+     * @return json array
      */
 
-    function _handle_range()
+    function get_data()
     {
-        if ($this->input->post('report_range'))
-            $this->session->set_userdata('report_sr', $this->input->post('report_range'));
+        clearos_profile(__METHOD__, __LINE__);
 
-        // FIXME: hard-coded today
-/*
-        if (!$this->session->userdata('report_sr'))
-            $this->session->set_userdata('reports_sr', 'today');
-*/
+        // Load dependencies
+        //------------------
+
+        $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
+
+        // Load data
+        //----------
+
+        try {
+            $library = strtolower($this->report_info['library']);
+            $method = $this->report_info['method'];
+
+            $data = $this->$library->$method(
+                $this->session->userdata('report_range'),
+                10
+            );
+        } catch (Exception $e) {
+            echo json_encode(array('code' => clearos_exception_code($e), 'errmsg' => clearos_exception_message($e)));
+        }
+
+        // Show data
+        //----------
+
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Fri, 01 Jan 2010 05:00:00 GMT');
+        header('Content-type: application/json');
+        echo json_encode($data);
     }
 }

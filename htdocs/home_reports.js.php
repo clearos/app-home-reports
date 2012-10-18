@@ -47,7 +47,7 @@ require_once $bootstrap . '/bootstrap.php';
 // T R A N S L A T I O N S
 ///////////////////////////////////////////////////////////////////////////////
 
-clearos_load_language('reports');
+clearos_load_language('base');
 
 ///////////////////////////////////////////////////////////////////////////////
 // J A V A S C R I P T
@@ -65,7 +65,7 @@ $(document).ready(function() {
     // Translations
     //-------------
 
-    lang_received = '<?php echo lang("proxy_report_received"); ?>';
+    lang_loading = '<?php echo lang("base_loading"); ?>';
 
     // Date range form action
     //-----------------------
@@ -86,6 +86,8 @@ $(document).ready(function() {
         var report_name = $("#" + id_prefix + "_report_name").val();
         var report_id = id_prefix;
 
+        $("#" + report_id + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // FIXME
+
         generate_report(app, report_name, report_id);
     });
 });
@@ -102,12 +104,14 @@ function generate_report(app, report_name, report_id) {
         dataType: 'json',
         success : function(payload) {
             var header = payload.header;
-            var type = payload.type;
-            var data = payload.data;
+            var data_type = payload.type;
+            var data = Array();
 
-            create_chart(header, type, data, report_id);
-            create_table(header, type, data, report_id);
-            create_helper(report_id);
+            if (payload.data)
+                data = payload.data;
+
+            create_chart(header, data_type, data, report_id);
+            create_table(header, data_type, data, report_id);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             // FIXME window.setTimeout(generate_report, 3000);
@@ -119,8 +123,10 @@ function generate_report(app, report_name, report_id) {
  * Creates chart.
  */
 
-function create_chart(header, type, data, report_id) {
+function create_chart(header, data_type, data, report_id) {
     var chart_id = report_id + '_chart';
+    var chart_type = $("#" + report_id + "_chart_type").val();
+    var chart_loading = $("#" + report_id + "_chart_loading_id").val();
     var chart_data = Array();
 
     // Put the data into key/value pairs - required by jqplot
@@ -131,37 +137,76 @@ function create_chart(header, type, data, report_id) {
     // FIXME: hard coded 10
     var length = (data.length > 10) ? 10 : data.length;
 
+    if (length == 0) {
+        $("#" + report_id + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
+        return;
+    }
+
+    $("#" + report_id + "_chart").html('');
+
     for (i = 0; i < length; i++) {
-        if (type[0] == 'ip')
+        if (data_type[0] == 'ip')
             x_item = long2ip(data[i][0]);
         else
             x_item = data[i][0];
 
-        chart_data.unshift([data[i][1], x_item]);
+        if (chart_type == 'pie')
+            chart_data.push([x_item, data[i][1]]);
+        else
+            chart_data.unshift([data[i][1], x_item]);
     } 
 
-    // Pump the data into jqplot call
-    //-------------------------------
+    // Pie chart
+    //----------
 
-    var chart = jQuery.jqplot (chart_id, [chart_data],
-    {
-        animate: !$.jqplot.use_excanvas,
-        seriesDefaults: {
-            renderer: jQuery.jqplot.BarRenderer,
-            rendererOptions: {
-                barDirection: 'horizontal'
+    if (chart_type == 'pie') {
+
+        var chart = jQuery.jqplot (chart_id, [chart_data],
+        {
+            legend: { show: true, location: 'e' },
+            seriesDefaults: {
+                renderer: jQuery.jqplot.PieRenderer,
+                shadow: true,
+                rendererOptions: {
+                    showDataLabels: true,
+                    sliceMargin: 8,
+                    dataLabels: 'value'
+                }
             },
-            pointLabels: { show: true, location: 'e', edgeTolerance: -15 },
-        },
-        axes: {
-            yaxis: {
-                renderer: $.jqplot.CategoryAxisRenderer,
+            grid: {
+                gridLineColor: 'transparent',
+                background: 'transparent',
+                borderColor: 'transparent',
+                shadow: false
             }
-        }
-    });
+        });
 
-    // Draw the chart
-    //---------------
+    // Bar chart
+    //----------
+
+    } else {
+        var chart = jQuery.jqplot (chart_id, [chart_data],
+        {
+            animate: !$.jqplot.use_excanvas,
+            seriesDefaults: {
+                renderer: jQuery.jqplot.BarRenderer,
+                rendererOptions: {
+                    barDirection: 'horizontal'
+                },
+                pointLabels: { show: true, location: 'e', edgeTolerance: -15 },
+            },
+            axes: {
+                yaxis: {
+                    renderer: $.jqplot.CategoryAxisRenderer,
+                }
+            }
+        });
+    }
+
+    // Hide the whirly and draw the chart
+    //-----------------------------------
+
+    $("#" + report_id + "_chart_loading_id").hide();
 
     chart.redraw();
 }
@@ -170,7 +215,7 @@ function create_chart(header, type, data, report_id) {
  * Creates data table.
  */
 
-function create_table(header, type, data, report_id) {
+function create_table(header, data_type, data, report_id) {
     var table = $('#' + report_id + '_table').dataTable();
 
     table.fnClearTable();
@@ -179,7 +224,7 @@ function create_table(header, type, data, report_id) {
         var row = Array();
 
         for (j = 0; j < data[i].length; j++) {
-            if (type[j] == 'ip')
+            if (data_type[j] == 'ip')
                 item = '<span style="display: none">' + data[i][j] + '</span>' + long2ip(data[i][j]);
             else
                 item = data[i][j];
@@ -189,14 +234,6 @@ function create_table(header, type, data, report_id) {
 
         table.fnAddData(row);
     }
-}
-
-/**
- * Creates helper.
- */
-
-function create_helper(report_id) {
-    var helper_id = report_id + '_helper';
 }
 
 /**

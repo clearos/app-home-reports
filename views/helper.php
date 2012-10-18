@@ -29,24 +29,40 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-echo form_open('home_reports/helper');
+///////////////////////////////////////////////////////////////////////////////
+// Load dependencies
+///////////////////////////////////////////////////////////////////////////////
+
+$this->lang->load('reports');
+
+///////////////////////////////////////////////////////////////////////////////
+// Form handler
+///////////////////////////////////////////////////////////////////////////////
+
+$unique_key = $report['app'] . '_' . $report['report'];
+
+// FIXME remove HTML (add a field_simple_view function?)
+$links = '';
+
+foreach ($report['links'] as $link => $title)
+    $links .= "<tr><td colspan='2'> - <a href='$link'>$title</a></td></tr>";
+
+///////////////////////////////////////////////////////////////////////////////
+// Form
+///////////////////////////////////////////////////////////////////////////////
+
+echo form_open($report['url'], array('id' => 'report_form'));
 echo form_header(lang('reports_report_settings')); 
 
-echo fieldset_header('Filter');
-echo field_dropdown('report_range', $ranges, $range, 'Date Range');
-echo field_button_set(array(form_submit_update('submit', 'high')));
+echo fieldset_header(lang('base_filter'));
+echo field_dropdown('report_range', $ranges, $range, lang('reports_date_range'));
 echo fieldset_footer();
 
-echo fieldset_header('Quick Links');
-"
-    <tr>
-        <td colspan='2'>
-            Links here
-        </td>
-    </tr>
-";
-echo fieldset_footer();
-
+if (! empty($links)) {
+    echo fieldset_header(lang('reports_related_reports'));
+    echo $links;
+    echo fieldset_footer();
+}
 
 echo form_footer();
 echo form_close();

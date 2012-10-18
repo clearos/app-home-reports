@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Chart view.
+ * Home reports controller.
  *
- * @category   ClearOS
- * @package    Reports
- * @subpackage Views
+ * @category   Apps
+ * @package    Home_Reports
+ * @subpackage Controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -25,37 +25,44 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.  
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
-// Load dependencies
+// C L A S S
 ///////////////////////////////////////////////////////////////////////////////
 
-$this->lang->load('reports');
+/**
+ * Home reports controller.
+ *
+ * @category   Apps
+ * @package    Home_Reports
+ * @subpackage Controllers
+ * @author     ClearFoundation <developer@clearfoundation.com>
+ * @copyright  2012 ClearFoundation
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
+ */
 
-///////////////////////////////////////////////////////////////////////////////
-// Form
-///////////////////////////////////////////////////////////////////////////////
+class Home_Reports extends ClearOS_Controller
+{
+    /**
+     * PPTPd settings controller
+     *
+     * @return view
+     */
 
-$unique_key = $report['app'] . '_' . $report['report'];
+    function index()
+    {
+        // Load dependencies
+        //------------------
 
-echo summary_table(
-    lang('reports_report_data'),
-    array(),
-    $report['headers'],
-    NULL,
-    array(
-        'id' => $unique_key . '_table',
-        'no_action' => TRUE,
-        'table_size' => 'large',
-        'paginate' => TRUE,
-        'paginate_large' => TRUE,
-        'filter' => TRUE,
-        'default_rows' => 50,
-        'sort-default-col' => 1,
-        'sort-default-dir' => 'desc',
-        'sorting-type' => $report['types'],
-    )
-);
+        $this->lang->load('home_reports');
+
+        // Load views
+        //-----------
+
+        $this->page->view_form('home_reports/intro', $data, lang('home_reports_app_name'));
+    }
+}

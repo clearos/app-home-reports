@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dashboard view.
+ * Chart view.
  *
  * @category   ClearOS
  * @package    Reports
@@ -29,12 +29,26 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-$unique_key = $app . '_' . $report;
+///////////////////////////////////////////////////////////////////////////////
+// Load dependencies
+///////////////////////////////////////////////////////////////////////////////
 
-echo "add some mor stuff to dashboard<Br>";
-echo chart_widget($title, "<div id='${unique_key}_chart'></div>");
+$this->lang->load('reports');
+
+///////////////////////////////////////////////////////////////////////////////
+// Form
+///////////////////////////////////////////////////////////////////////////////
+
+$unique_key = $report['app'] . '_' . $report['report'];
+
+$options['action'] = button_set(
+    array(anchor_custom('/app/' . $report['app'] . '/' . $report['report'] . '/index/full', lang('reports_full_report')))
+);
+
+echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);
 echo "
-        <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>
-        <input type='hidden' id='${unique_key}_app_name' value='" . $app . "'>
-        <input type='hidden' id='${unique_key}_report_name' value='" . $report . "'>
+    <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>
+    <input type='hidden' id='${unique_key}_app_name' value='" . $report['app'] . "'>
+    <input type='hidden' id='${unique_key}_report_name' value='" . $report['report'] . "'>
+    <input type='hidden' id='${unique_key}_chart_type' value='" . $report['chart_type'] . "'>
 ";

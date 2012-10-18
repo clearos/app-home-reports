@@ -1,30 +1,30 @@
 
 Name: app-home-reports
 Epoch: 1
-Version: 1.2.9
+Version: 1.4.0
 Release: 1%{dist}
 Summary: Home Reports
 License: GPLv3
 Group: ClearOS/Apps
 Source: %{name}-%{version}.tar.gz
 Buildarch: noarch
+Provides: system-report-driver
 Requires: %{name}-core = 1:%{version}-%{release}
 Requires: app-base
 Requires: app-reports
 
 %description
-The Home Reports app provides a set of standard report tools for the home user.
+Welcome to the Home Reports app!  The reports are designed to be useful in home environments.
 
 %package core
 Summary: Home Reports - Core
 License: LGPLv3
 Group: ClearOS/Libraries
-Provides: system-report-driver
 Requires: app-base-core
 Requires: app-reports-core
 
 %description core
-The Home Reports app provides a set of standard report tools for the home user.
+Welcome to the Home Reports app!  The reports are designed to be useful in home environments.
 
 This package provides the core API and libraries.
 

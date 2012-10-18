@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'home_reports';
-$app['version'] = '1.2.9';
+$app['version'] = '1.4.0';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -20,7 +20,6 @@ $app['description'] = lang('home_reports_app_description');
 $app['name'] = lang('home_reports_app_name');
 $app['category'] = lang('base_category_reports');
 $app['subcategory'] = lang('base_subcategory_settings');
-$app['menu_enabled'] = FALSE;
 
 /////////////////////////////////////////////////////////////////////////////
 // Packaging
@@ -34,6 +33,6 @@ $app['core_requires'] = array(
     'app-reports-core',
 );
 
-$app['core_provides'] = array(
+$app['provides'] = array(
     'system-report-driver',
 );

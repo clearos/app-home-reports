@@ -145,6 +145,8 @@ class Report_Driver extends Report_Engine
             '11' => lang('base_month_november'),
             '12' => lang('base_month_december')
         );
+
+        parent::__construct();
     }
 
     /**

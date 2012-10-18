@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Chart view.
+ * Intro view.
  *
  * @category   ClearOS
  * @package    Reports
@@ -9,7 +9,7 @@
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,13 +29,19 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-$unique_key = $report['app'] . '_' . $report['report'];
+///////////////////////////////////////////////////////////////////////////////
+// Load dependencies
+///////////////////////////////////////////////////////////////////////////////
 
-echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);
+$this->lang->load('home_reports');
 
-echo "
-    <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>
-    <input type='hidden' id='${unique_key}_app_name' value='" . $report['app'] . "'>
-    <input type='hidden' id='${unique_key}_report_name' value='" . $report['report'] . "'>
-    <input type='hidden' id='${unique_key}_chart_type' value='" . $report['chart_type'] . "'>
-";
+///////////////////////////////////////////////////////////////////////////////
+// Form
+///////////////////////////////////////////////////////////////////////////////
+
+// FIXME
+
+echo infobox_highlight(
+    "Welcome",
+    "Thanks for trying out the Home Reports beta."
+);
