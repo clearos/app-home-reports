@@ -105,7 +105,7 @@ function generate_report(app, report_name, report_id) {
         success : function(payload) {
             var header = payload.header;
             var data_type = payload.type;
-            var data = Array();
+            var data = new Array();
 
             if (payload.data)
                 data = payload.data;
@@ -124,10 +124,23 @@ function generate_report(app, report_name, report_id) {
  */
 
 function create_chart(header, data_type, data, report_id) {
+    // Chart details
     var chart_id = report_id + '_chart';
     var chart_type = $("#" + report_id + "_chart_type").val();
     var chart_loading = $("#" + report_id + "_chart_loading_id").val();
-    var chart_data = Array();
+
+    // Series data
+    var series = new Array();
+
+    for (i = 0; i < header.length - 1; i++)
+        series[i] = new Array();
+
+    // Labels and axes
+    var x_axis_label = header[0];
+    var x_axis_min = ''; 
+    var x_axis_max = ''; 
+
+    header.shift();
 
     // Put the data into key/value pairs - required by jqplot
     // - Convert IP addresses
@@ -135,33 +148,42 @@ function create_chart(header, data_type, data, report_id) {
     //-------------------------------------------------------
 
     // FIXME: hard coded 10
-    var length = (data.length > 10) ? 10 : data.length;
+    var rows = (data.length > 200) ? 200 : data.length;
 
-    if (length == 0) {
+    if (rows == 0) {
         $("#" + report_id + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
         return;
     }
 
     $("#" + report_id + "_chart").html('');
 
-    for (i = 0; i < length; i++) {
-        if (data_type[0] == 'ip')
-            x_item = long2ip(data[i][0]);
-        else
-            x_item = data[i][0];
+    for (i = 0; i < rows; i++) {
 
-        if (chart_type == 'pie')
-            chart_data.push([x_item, data[i][1]]);
-        else
-            chart_data.unshift([data[i][1], x_item]);
+        for (j = 1; j < data[i].length; j++) {
+            if (data_type[j] == 'ip')
+                x_item = long2ip(data[i][0]);
+            else
+                x_item = data[i][0];
+
+            if (chart_type == 'bar')
+                series[j-1].unshift([data[i][j], x_item]);
+            else
+                series[j-1].unshift([x_item, data[i][j]]);
+
+            if ((i == 0) && (j == 1))
+                x_axis_max = x_item;
+        }
+
     } 
+
+    x_axis_min = data[rows-1][0];
 
     // Pie chart
     //----------
 
     if (chart_type == 'pie') {
 
-        var chart = jQuery.jqplot (chart_id, [chart_data],
+        var chart = jQuery.jqplot (chart_id, series,
         {
             legend: { show: true, location: 'e' },
             seriesDefaults: {
@@ -181,11 +203,69 @@ function create_chart(header, data_type, data, report_id) {
             }
         });
 
+    // Line chart
+    //----------
+
+    } else if ((chart_type == 'line') || (chart_type == 'line_stack')) {
+        if (chart_type == 'line') {
+            stack_series = false;
+            fill = false;
+        } else {
+            stack_series = true;
+            fill = true;
+        }
+
+        var chart = jQuery.jqplot (chart_id, series,
+        {
+            stackSeries: stack_series,
+            grid:{
+                gridLineColor: '#dfdfdf',
+                borderWidth: 1.5
+            },
+            legend: {
+                show: true,
+                location: 'ne',
+                labels: header
+            },
+            seriesDefaults: { 
+                fill: fill,
+                showMarker: false,
+                pointLabels: { show: false }
+            },
+            axesDefaults: {
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                labelRenderer: $.jqplot.AxisLabelRenderer,
+                labelOptions: {
+                    fontSize: '10pt'
+                },
+                tickOptions: {
+                    fontSize: '8pt'
+                }
+            },
+            axes:{
+                xaxis:{
+                    label: x_axis_label,
+                    min: x_axis_min,
+                    max: x_axis_max,
+                    renderer: $.jqplot.DateAxisRenderer,
+                    tickOptions:{
+                        formatString:'%b %e %H:%M'
+                    }
+                },
+                yaxis:{
+                    min: 0,
+                    labelOptions: {
+                        angle: -90
+                    },
+                }
+            },
+        });
+
     // Bar chart
     //----------
 
     } else {
-        var chart = jQuery.jqplot (chart_id, [chart_data],
+        var chart = jQuery.jqplot (chart_id, series,
         {
             animate: !$.jqplot.use_excanvas,
             seriesDefaults: {
@@ -221,7 +301,7 @@ function create_table(header, data_type, data, report_id) {
     table.fnClearTable();
 
     for (i = 0; i < data.length; i++) {
-        var row = Array();
+        var row = new Array();
 
         for (j = 0; j < data[i].length; j++) {
             if (data_type[j] == 'ip')
@@ -234,6 +314,8 @@ function create_table(header, data_type, data, report_id) {
 
         table.fnAddData(row);
     }
+
+    table.fnAdjustColumnSizing();
 }
 
 /**
