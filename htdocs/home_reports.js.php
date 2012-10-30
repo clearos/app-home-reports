@@ -86,7 +86,7 @@ $(document).ready(function() {
         var report_name = $("#" + id_prefix + "_report_name").val();
         var report_id = id_prefix;
 
-        $("#" + report_id + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // FIXME
+        $("#" + report_id + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // TODO - merge HTML
 
         generate_report(app, report_name, report_id);
     });
@@ -106,15 +106,19 @@ function generate_report(app, report_name, report_id) {
             var header = payload.header;
             var data_type = payload.type;
             var data = new Array();
+            var format = new Array();
+
+            if (payload.format)
+                format = payload.format;
 
             if (payload.data)
                 data = payload.data;
 
-            create_chart(header, data_type, data, report_id);
-            create_table(header, data_type, data, report_id);
+            create_chart(report_id, header, data_type, data, format);
+            create_table(report_id, header, data_type, data, format);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
-            // FIXME window.setTimeout(generate_report, 3000);
+            // TODO window.setTimeout(generate_report, 3000);
         }
     });
 }
@@ -123,32 +127,38 @@ function generate_report(app, report_name, report_id) {
  * Creates chart.
  */
 
-function create_chart(header, data_type, data, report_id) {
-    // Chart details
+function create_chart(report_id, header, data_type, data, format) {
+
+    // Chart GUI details
+    //------------------
+
     var chart_id = report_id + '_chart';
     var chart_type = $("#" + report_id + "_chart_type").val();
     var chart_loading = $("#" + report_id + "_chart_loading_id").val();
 
-    // Series data
+    // Series raw data
+    //----------------
+
     var series = new Array();
 
     for (i = 0; i < header.length - 1; i++)
         series[i] = new Array();
 
-    // Labels and axes
-    var x_axis_label = header[0];
-    var x_axis_min = ''; 
-    var x_axis_max = ''; 
+    // Calculated mins/maxes
+    //----------------------
 
-    header.shift();
+    var baseline_data_points = (format.baseline_data_points) ? format.baseline_data_points : 200;
+    var baseline_calculated_min = 0;
+    var baseline_calculated_max = 0;
+    var series_calculated_min = 0;
+    var series_calculated_max = 0;
 
     // Put the data into key/value pairs - required by jqplot
     // - Convert IP addresses
     // - Select the x and y axes
     //-------------------------------------------------------
 
-    // FIXME: hard coded 10
-    var rows = (data.length > 200) ? 200 : data.length;
+    var rows = (data.length > baseline_data_points) ? baseline_data_points : data.length;
 
     if (rows == 0) {
         $("#" + report_id + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
@@ -158,25 +168,52 @@ function create_chart(header, data_type, data, report_id) {
     $("#" + report_id + "_chart").html('');
 
     for (i = 0; i < rows; i++) {
+        // Pie charts can only show one series
+        series_number = (chart_type == 'pie') ? 2 : data[i].length;
+        x_item = convert_to_human(data[i][0], data_type[0]);
 
-        for (j = 1; j < data[i].length; j++) {
-            if (data_type[j] == 'ip')
-                x_item = long2ip(data[i][0]);
-            else
-                x_item = data[i][0];
-
+        for (j = 1; j < series_number; j++) {
             if (chart_type == 'bar')
-                series[j-1].unshift([data[i][j], x_item]);
+                series[j-1].push([x_item, data[i][j]]);
             else
                 series[j-1].unshift([x_item, data[i][j]]);
 
-            if ((i == 0) && (j == 1))
-                x_axis_max = x_item;
-        }
+            if (data[i][j] < series_calculated_min)
+                series_calculated_min = data[i][j];
 
+            if (data[i][j] > series_calculated_max)
+                series_calculated_max = data[i][j];
+
+            if ((i == 0) && (j == 1))
+                baseline_calculated_max = x_item;
+        }
     } 
 
-    x_axis_min = data[rows-1][0];
+    baseline_calculated_min = data[rows-1][0];
+
+    // Labels, axes and formats
+    //-------------------------
+
+    // Round max values
+    var tens_string = String(Math.round(series_calculated_max));
+    var tens = tens_string.length - 1;
+    series_calculated_max = Math.ceil(series_calculated_max / Math.pow(10,tens)) * Math.pow(10,tens);
+
+    var baseline_min = (format.baseline_min) ? format.baseline_min : baseline_calculated_min;
+    var baseline_max = (format.baseline_max) ? format.baseline_max : baseline_calculated_max;
+    var baseline_label = (format.baseline_label) ? format.baseline_label : ''; // FIXME: translate
+    var baseline_format = '%b %e %H:%M'; // FIXME
+
+    var series_min = (format.series_min) ? format.series_min : series_calculated_min;
+    var series_max = (format.series_max) ? format.series_max : series_calculated_max;
+    var series_label = (format.series_label) ? format.series_label : '';
+    var series_format = (format.series_units) ? '%s ' + format.series_units : '%s';
+
+    var legend_labels = header;
+    legend_labels.shift();
+
+// console.log(baseline_calculated_min + ' - ' + baseline_calculated_max);
+// console.log(series_calculated_min + ' - ' + series_calculated_max);
 
     // Pie chart
     //----------
@@ -185,7 +222,16 @@ function create_chart(header, data_type, data, report_id) {
 
         var chart = jQuery.jqplot (chart_id, series,
         {
-            legend: { show: true, location: 'e' },
+            grid: {
+                gridLineColor: 'transparent',
+                background: 'transparent',
+                borderColor: 'transparent',
+                shadow: false
+            },
+            legend: {
+                show: true,
+                location: 'e',
+            },
             seriesDefaults: {
                 renderer: jQuery.jqplot.PieRenderer,
                 shadow: true,
@@ -194,12 +240,6 @@ function create_chart(header, data_type, data, report_id) {
                     sliceMargin: 8,
                     dataLabels: 'value'
                 }
-            },
-            grid: {
-                gridLineColor: 'transparent',
-                background: 'transparent',
-                borderColor: 'transparent',
-                shadow: false
             }
         });
 
@@ -218,23 +258,20 @@ function create_chart(header, data_type, data, report_id) {
         var chart = jQuery.jqplot (chart_id, series,
         {
             stackSeries: stack_series,
-            grid:{
-                gridLineColor: '#dfdfdf',
-                borderWidth: 1.5
-            },
             legend: {
                 show: true,
                 location: 'ne',
-                labels: header
+                labels: legend_labels
             },
             seriesDefaults: { 
                 fill: fill,
+                shadow: true,
                 showMarker: false,
                 pointLabels: { show: false }
             },
             axesDefaults: {
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                labelRenderer: $.jqplot.AxisLabelRenderer,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 labelOptions: {
                     fontSize: '10pt'
                 },
@@ -243,20 +280,25 @@ function create_chart(header, data_type, data, report_id) {
                 }
             },
             axes:{
-                xaxis:{
-                    label: x_axis_label,
-                    min: x_axis_min,
-                    max: x_axis_max,
+                xaxis: {
+                    label: baseline_label,
+                    min: baseline_min,
+                    max: baseline_max,
                     renderer: $.jqplot.DateAxisRenderer,
                     tickOptions:{
-                        formatString:'%b %e %H:%M'
+                        formatString: baseline_format
                     }
                 },
-                yaxis:{
-                    min: 0,
+                yaxis: {
+                    label: series_label,
+                    min: series_min,
+                    max: series_max,
                     labelOptions: {
                         angle: -90
                     },
+                    tickOptions:{
+                        formatString: series_format
+                    }
                 }
             },
         });
@@ -268,16 +310,48 @@ function create_chart(header, data_type, data, report_id) {
         var chart = jQuery.jqplot (chart_id, series,
         {
             animate: !$.jqplot.use_excanvas,
+            legend: {
+                show: true,
+                location: 'ne',
+                labels: legend_labels
+            },
             seriesDefaults: {
                 renderer: jQuery.jqplot.BarRenderer,
                 rendererOptions: {
-                    barDirection: 'horizontal'
+                    barDirection: 'vertical'
                 },
                 pointLabels: { show: true, location: 'e', edgeTolerance: -15 },
             },
+            axesDefaults: {
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+                labelOptions: {
+                    fontSize: '10pt'
+                },
+                tickOptions: {
+                    fontSize: '8pt'
+                }
+            },
             axes: {
-                yaxis: {
+                xaxis: {
+                    label: baseline_label,
+                    min: baseline_min,
+                    max: baseline_max,
                     renderer: $.jqplot.CategoryAxisRenderer,
+                    tickOptions: {
+                        formatString: baseline_format,
+                        angle: -30
+                    },
+                },
+                yaxis: {
+                    min: series_min,
+                    max: series_max,
+                    labelOptions: {
+                        angle: -90
+                    },
+                    tickOptions:{
+                        formatString: series_format
+                    }
                 }
             }
         });
@@ -295,7 +369,7 @@ function create_chart(header, data_type, data, report_id) {
  * Creates data table.
  */
 
-function create_table(header, data_type, data, report_id) {
+function create_table(report_id, header, data_type, data, format) {
     var table = $('#' + report_id + '_table').dataTable();
 
     table.fnClearTable();
@@ -332,6 +406,17 @@ function long2ip(ip_long) {
     }
 
     return ip;
+}
+
+/**
+ * Converts a value to a human-readable format, e.g. integer IPs into quad-format
+ */
+
+function convert_to_human(value, type) {
+    if (type == 'ip')
+        return long2ip(value);
+    else
+        return value;
 }
 
 // vim: ts=4 syntax=javascript

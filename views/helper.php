@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 $this->lang->load('reports');
+$this->lang->load('home_reports');
 
 ///////////////////////////////////////////////////////////////////////////////
 // Form handler
@@ -52,14 +53,14 @@ foreach ($report['links'] as $link => $title)
 ///////////////////////////////////////////////////////////////////////////////
 
 echo form_open($report['url'], array('id' => 'report_form'));
-echo form_header(lang('reports_report_settings')); 
+echo form_header(lang('home_reports_home_reports')); 
 
 echo fieldset_header(lang('base_filter'));
 echo field_dropdown('report_range', $ranges, $range, lang('reports_date_range'));
 echo fieldset_footer();
 
 if (! empty($links)) {
-    echo fieldset_header(lang('reports_related_reports'));
+    echo fieldset_header(lang('reports_reports'));
     echo $links;
     echo fieldset_footer();
 }

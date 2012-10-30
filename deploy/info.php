@@ -26,11 +26,11 @@ $app['subcategory'] = lang('base_subcategory_settings');
 /////////////////////////////////////////////////////////////////////////////
 
 $app['requires'] = array(
-    'app-reports',
+    'app-reports >= 1:1.4.1',
 );
 
 $app['core_requires'] = array(
-    'app-reports-core',
+    'app-reports-core >= 1:1.4.1',
 );
 
 $app['provides'] = array(
