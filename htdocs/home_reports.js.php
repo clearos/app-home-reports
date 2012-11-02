@@ -63,7 +63,7 @@ $(document).ready(function() {
     // Date range form action
     //-----------------------
 
-    $("#report_range").click(function(){
+    $("#report_range").change(function(){
         $('form#report_form').submit();
     });
 
