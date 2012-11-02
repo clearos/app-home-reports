@@ -11,7 +11,7 @@ Buildarch: noarch
 Provides: system-report-driver
 Requires: %{name}-core = 1:%{version}-%{release}
 Requires: app-base
-Requires: app-reports >= 1:1.4.1
+Requires: app-reports >= 1:1.4.2
 
 %description
 Welcome to the Home Reports app!  The reports are designed to be useful in home environments.
@@ -21,7 +21,7 @@ Summary: Home Reports - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
-Requires: app-reports-core >= 1:1.4.1
+Requires: app-reports-core >= 1:1.4.2
 
 %description core
 Welcome to the Home Reports app!  The reports are designed to be useful in home environments.

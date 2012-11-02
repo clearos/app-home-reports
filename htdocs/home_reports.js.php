@@ -3,20 +3,13 @@
 /**
  * Report ajax helpers.
  *
- * All reports generate IDs to allow this javascript to take action.  Here's
- * an example of the Domains report in the Proxy Report app:
- *
- * <input type='hidden' id='clearos_report_proxy_report_domains_basename' value='proxy_report_domains'>
- * <input type='hidden' id='proxy_report_domains_app_name' value='proxy_report'>
- * <input type='hidden' id='proxy_report_domains_report_name' value='domains'>
- *
  * @category   ClearOS
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Javascript
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/home_reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////

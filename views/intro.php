@@ -4,7 +4,7 @@
  * Intro view.
  *
  * @category   ClearOS
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Views
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation

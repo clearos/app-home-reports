@@ -4,12 +4,12 @@
  * Report base class.
  *
  * @category   Apps
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,12 +76,12 @@ clearos_load_library('base/File_Not_Found_Exception');
  * Report base class.
  *
  * @category   Apps
- * @package    Reports
+ * @package    Home_Reports
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
- * @link       http://www.clearfoundation.com/docs/developer/apps/reports/
+ * @link       http://www.clearfoundation.com/docs/developer/apps/home_reports/
  */
 
 class Report_Driver extends Report_Engine
