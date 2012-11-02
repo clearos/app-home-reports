@@ -42,13 +42,15 @@ $this->lang->load('reports');
 $unique_key = $report['app'] . '_' . $report['report'];
 
 $options['action'] = button_set(
-    array(anchor_custom('/app/' . $report['app'] . '/' . $report['report'] . '/index/full', lang('reports_full_report')))
+    array(anchor_custom('/app/' . $report['app'] . '/' . $report['report'], lang('reports_full_report')))
 );
 
 echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);
 echo "
     <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>
     <input type='hidden' id='${unique_key}_app_name' value='" . $report['app'] . "'>
+    <input type='hidden' id='${unique_key}_basename' value='" . $report['basename'] . "'>
     <input type='hidden' id='${unique_key}_report_name' value='" . $report['report'] . "'>
+    <input type='hidden' id='${unique_key}_key_value' value='" . $report['key_value'] . "'>
     <input type='hidden' id='${unique_key}_chart_type' value='" . $report['chart_type'] . "'>
 ";

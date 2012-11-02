@@ -55,22 +55,72 @@ require_once clearos_app_base('reports') . '/controllers/report_engine_controlle
 
 class Report_Controller extends Report_Engine_Controller
 {
+    function dashboard($key = NULL)
+    {
+        $this->_index($key, 'dashboard');
+    }
+
+    function index($key = NULL)
+    {
+        $this->_index($key, 'full');
+    }
+
     /**
-     * Reports engine constructor.
+     * Returns raw data from a report.
      *
-     * @return view
+     * @return json array
      */
 
-    function __construct($app, $library, $report, $reports = array())
+    function get_data($key = NULL)
     {
-        if (empty($reports))
-            $this->is_overview = FALSE;
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Non-intuitive.  See _index()
+
+        if (empty($key))
+            $report_name = strtolower(get_class($this));
         else
-            $this->is_overview = TRUE;
+            $report_name = $key;
 
-        $this->reports = $reports;
+        // Initialize report data
+        //-----------------------
 
-        parent::__construct($app, $library, $report);
+        $report_info = $this->_get_report_info($report_name);
+
+        // Load dependencies
+        //------------------
+
+        $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
+
+        // Load data
+        //----------
+
+        try {
+            $library = strtolower($this->report_info['library']);
+            $method = $report_info['api_data'];
+
+            // As noted above, some reports are keyed, while others are not.
+            if (empty($key)) {
+                $data = $this->$library->$method(
+                    $this->session->userdata('report_range')
+                );
+            } else {
+                $data = $this->$library->$method(
+                    $report_info['key_value'],
+                    $this->session->userdata('report_range')
+                );
+            }
+        } catch (Exception $e) {
+            echo json_encode(array('code' => clearos_exception_code($e), 'errmsg' => clearos_exception_message($e)));
+        }
+
+        // Show data
+        //----------
+
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Expires: Fri, 01 Jan 2010 05:00:00 GMT');
+        header('Content-type: application/json');
+        echo json_encode($data);
     }
 
     /**
@@ -79,8 +129,30 @@ class Report_Controller extends Report_Engine_Controller
      * @return view
      */
 
-    function index($type = 'dashboard')
+    function _index($key, $type)
     {
+        // Non-intuitive.
+        //
+        // Some reports are keyed on a value.  For example,
+        // the "Network Report" passes the value of the network interface 
+        // (eth0, eth1, etc).  Other reports do not require key values, for
+        // example, the "System Load" is just that... the system load.
+        //
+        // In addition, we can automatically detect the special "overview"
+        // report -- the "app" basename will match the controller class.
+
+        if ($this->report_info['app'] === strtolower(get_class($this)))
+            $report_name = 'overview';  // FIXME: make this a constant?
+        else if (empty($key))
+            $report_name = strtolower(get_class($this));
+        else
+            $report_name = $key;
+
+        // Initialize report data
+        //-----------------------
+
+        $report_info = $this->_get_report_info($report_name);
+
         // Load dependencies
         //------------------
 
@@ -104,15 +176,14 @@ class Report_Controller extends Report_Engine_Controller
             }
         }
 
-        if (! $this->session->userdata('report_range')) {
+        if (! $this->session->userdata('report_range'))
             $this->session->set_userdata('report_range', 'today'); // FIXME: hard-coded
-        }
 
         // Load view data
         //---------------
 
         try {
-            $data['report'] = $this->report_info;
+            $data['report'] = $report_info;
 
             $data['range'] = $this->session->userdata('report_range');
             $data['ranges'] = $this->report_driver->get_date_ranges();
@@ -126,48 +197,31 @@ class Report_Controller extends Report_Engine_Controller
         // Load views
         //-----------
 
-        if ($this->is_overview)
-            $this->page->view_reports($this->reports, $data, $title);
+        if ($report_name === 'overview') // See FIXME about constant (above)
+            $this->page->view_reports($report_info['dashboards'], $data, $title);
         else
             $this->page->view_report($type, $data, $title, $options);
     }
 
     /**
-     * Returns raw data from a report.
+     * Returns the report info from underlying class/API.
      *
-     * @return json array
+     * @param string $report report name
      */
 
-    function get_data()
+    function _get_report_info($report)
     {
-        clearos_profile(__METHOD__, __LINE__);
-
-        // Load dependencies
-        //------------------
-
-        $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
-
-        // Load data
-        //----------
-
         try {
-            $library = strtolower($this->report_info['library']);
-            $method = $this->report_info['method'];
+            $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
 
-            $data = $this->$library->$method(
-                $this->session->userdata('report_range'),
-                10
-            );
+            $ci_library = strtolower($this->report_info['library']);
+
+            $report_info = $this->$ci_library->get_report_info($report);
         } catch (Exception $e) {
-            echo json_encode(array('code' => clearos_exception_code($e), 'errmsg' => clearos_exception_message($e)));
+            $this->page->view_exception($e);
+            return;
         }
 
-        // Show data
-        //----------
-
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Fri, 01 Jan 2010 05:00:00 GMT');
-        header('Content-type: application/json');
-        echo json_encode($data);
+        return $report_info;
     }
 }

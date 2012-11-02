@@ -83,12 +83,13 @@ $(document).ready(function() {
         var id_prefix = $(value).val();
 
         var app = $("#" + id_prefix + "_app_name").val();
-        var report_name = $("#" + id_prefix + "_report_name").val();
+        var report_basename = $("#" + id_prefix + "_basename").val();
+        var report_key = $("#" + id_prefix + "_key_value").val();
         var report_id = id_prefix;
 
         $("#" + report_id + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // TODO - merge HTML
 
-        generate_report(app, report_name, report_id);
+        generate_report(app, report_basename, report_key, report_id);
     });
 });
 
@@ -96,10 +97,11 @@ $(document).ready(function() {
  * Ajax call for standard report.
  */
 
-function generate_report(app, report_name, report_id) {
+function generate_report(app, report_basename, report_key, report_id) {
 
+console.log(app + '/' + report_basename + '/' + report_key);
     $.ajax({
-        url: '/app/' + app + '/' + report_name + '/get_data',
+        url: '/app/' + app + '/' + report_basename + '/get_data/' + report_key,
         method: 'GET',
         dataType: 'json',
         success : function(payload) {

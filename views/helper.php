@@ -43,10 +43,10 @@ $this->lang->load('home_reports');
 $unique_key = $report['app'] . '_' . $report['report'];
 
 // FIXME remove HTML (add a field_simple_view function?)
-$links = '';
+$urls = '';
 
-foreach ($report['links'] as $link => $title)
-    $links .= "<tr><td colspan='2'> - <a href='$link'>$title</a></td></tr>";
+foreach ($report['urls'] as $url => $title)
+    $urls .= "<tr><td colspan='2'> - <a href='$url'>$title</a></td></tr>";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Form
@@ -59,9 +59,9 @@ echo fieldset_header(lang('base_filter'));
 echo field_dropdown('report_range', $ranges, $range, lang('reports_date_range'));
 echo fieldset_footer();
 
-if (! empty($links)) {
+if (! empty($urls)) {
     echo fieldset_header(lang('reports_reports'));
-    echo $links;
+    echo $urls;
     echo fieldset_footer();
 }
 
