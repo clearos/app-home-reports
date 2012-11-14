@@ -42,7 +42,7 @@ $this->lang->load('reports');
 $unique_key = $report['app'] . '_' . $report['report'];
 
 $options['action'] = button_set(
-    array(anchor_custom('/app/' . $report['app'] . '/' . $report['report'], lang('reports_full_report')))
+    array(anchor_custom('/app/' . $report['url'], lang('reports_full_report')))
 );
 
 echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);

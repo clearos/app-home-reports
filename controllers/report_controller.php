@@ -161,7 +161,6 @@ class Report_Controller extends Report_Engine_Controller
         try {
             $data['report'] = $report_info;
             $data['report']['key_value'] = $key;
-            $data['report']['url'] = $this->uri->uri_string();
 
             $data['range'] = $this->session->userdata('report_range');
             $data['ranges'] = $this->report_driver->get_date_ranges();
