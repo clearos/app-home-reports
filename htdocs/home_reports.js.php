@@ -99,20 +99,24 @@ function generate_report(app, report_basename, report_key, report_id) {
         success : function(payload) {
             var header = payload.header;
             var data_type = payload.type;
-            var format = new Array();
-            var detail = new Array();
             var data = new Array();
-
-            if (payload.format)
-                format = payload.format;
-
-            if (payload.detail)
-                detail = payload.detail;
+            var detail = new Array();
+            var format = new Array();
+            var chart_series = new Array();
 
             if (payload.data)
                 data = payload.data;
 
-            create_chart(report_id, header, data_type, data, format, detail);
+            if (payload.detail)
+                detail = payload.detail;
+
+            if (payload.format)
+                format = payload.format;
+
+            if (payload.chart_series)
+                chart_series = payload.chart_series;
+
+            create_chart(report_id, header, data_type, data, format, detail, chart_series);
             create_table(report_id, header, data_type, data, format, detail);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -125,7 +129,7 @@ function generate_report(app, report_basename, report_key, report_id) {
  * Creates chart.
  */
 
-function create_chart(report_id, header, data_type, data, format, detail) {
+function create_chart(report_id, header, data_type, data, format, detail, chart_series) {
 
     // Chart GUI details
     //------------------
@@ -139,8 +143,10 @@ function create_chart(report_id, header, data_type, data, format, detail) {
 
     var series = new Array();
 
+/*
     for (i = 0; i < header.length - 1; i++)
         series[i] = new Array();
+*/
 
     // Calculated mins/maxes
     //----------------------
@@ -171,6 +177,12 @@ function create_chart(report_id, header, data_type, data, format, detail) {
         x_item = convert_to_human(data[i][0], data_type[0]);
 
         for (j = 1; j < series_number; j++) {
+            if ((typeof chart_series[j] != 'undefined') && !chart_series[j])
+                continue;
+
+            if (typeof series[j-1] == 'undefined')
+                series[j-1] = new Array();
+
             if (chart_type == 'bar')
                 series[j-1].push([x_item, data[i][j]]);
             else
@@ -207,8 +219,20 @@ function create_chart(report_id, header, data_type, data, format, detail) {
     var series_label = (format.series_label) ? format.series_label : '';
     var series_format = (format.series_units) ? '%s ' + format.series_units : '%s';
 
-    var legend_labels = header;
-    legend_labels.shift();
+    var legend_labels = Array();
+
+    // Legend - show all headers unless specific series is specified
+    //--------------------------------------------------------------
+
+    if (typeof chart_series[0] == 'undefined') {
+        legend_labels = header;
+        legend_labels.shift();
+    } else {
+        for (i = 1; i < chart_series.length; i++) {
+            if (chart_series[i])
+                legend_labels.push(header[i]);
+        }
+    }
 
     // Pie chart
     //----------
