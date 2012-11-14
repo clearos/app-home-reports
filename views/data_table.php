@@ -54,7 +54,7 @@ echo summary_table(
         'paginate_large' => TRUE,
         'filter' => TRUE,
         'default_rows' => 50,
-        'sort-default-col' => 1,
+        'sort-default-col' => $report['sort_column'],
         'sort-default-dir' => 'desc',
         'sorting-type' => $report['types'],
     )

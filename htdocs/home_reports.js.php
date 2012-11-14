@@ -92,7 +92,6 @@ $(document).ready(function() {
 
 function generate_report(app, report_basename, report_key, report_id) {
 
-console.log(app + '/' + report_basename + '/' + report_key);
     $.ajax({
         url: '/app/' + app + '/' + report_basename + '/get_data/' + report_key,
         method: 'GET',
@@ -100,17 +99,21 @@ console.log(app + '/' + report_basename + '/' + report_key);
         success : function(payload) {
             var header = payload.header;
             var data_type = payload.type;
-            var data = new Array();
             var format = new Array();
+            var detail = new Array();
+            var data = new Array();
 
             if (payload.format)
                 format = payload.format;
 
+            if (payload.detail)
+                detail = payload.detail;
+
             if (payload.data)
                 data = payload.data;
 
-            create_chart(report_id, header, data_type, data, format);
-            create_table(report_id, header, data_type, data, format);
+            create_chart(report_id, header, data_type, data, format, detail);
+            create_table(report_id, header, data_type, data, format, detail);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             // TODO window.setTimeout(generate_report, 3000);
@@ -122,7 +125,7 @@ console.log(app + '/' + report_basename + '/' + report_key);
  * Creates chart.
  */
 
-function create_chart(report_id, header, data_type, data, format) {
+function create_chart(report_id, header, data_type, data, format, detail) {
 
     // Chart GUI details
     //------------------
@@ -207,9 +210,6 @@ function create_chart(report_id, header, data_type, data, format) {
     var legend_labels = header;
     legend_labels.shift();
 
-// console.log(baseline_calculated_min + ' - ' + baseline_calculated_max);
-// console.log(series_calculated_min + ' - ' + series_calculated_max);
-
     // Pie chart
     //----------
 
@@ -241,8 +241,8 @@ function create_chart(report_id, header, data_type, data, format) {
     // Line chart
     //----------
 
-    } else if ((chart_type == 'line') || (chart_type == 'line_stack')) {
-        if (chart_type == 'line') {
+    } else if ((chart_type == 'line') || (chart_type == 'timeline') || (chart_type == 'line_stack') || (chart_type == 'timeline_stack')) {
+        if ((chart_type == 'line') || (chart_type == 'timeline')) {
             stack_series = false;
             fill = false;
         } else {
@@ -364,7 +364,7 @@ function create_chart(report_id, header, data_type, data, format) {
  * Creates data table.
  */
 
-function create_table(report_id, header, data_type, data, format) {
+function create_table(report_id, header, data_type, data, format, detail) {
     var table = $('#' + report_id + '_table').dataTable();
 
     table.fnClearTable();
@@ -373,10 +373,20 @@ function create_table(report_id, header, data_type, data, format) {
         var row = new Array();
 
         for (j = 0; j < data[i].length; j++) {
-            if (data_type[j] == 'ip')
-                item = '<span style="display: none">' + data[i][j] + '</span>' + long2ip(data[i][j]);
-            else
-                item = data[i][j];
+            // IP addresses need special handling for sorting
+            if (data_type[j] == 'ip') {
+                var hidden_item = '<span style="display: none">' + data[i][j] + '</span>';
+                if (detail[j])
+                    item = hidden_item + '<a href="' + detail[j] + long2ip(data[i][j]) + '">' + long2ip(data[i][j]) + '</a>';
+                else
+                    item = hidden_item + long2ip(data[i][j]);
+            } else {
+                if (detail[j])
+                    item = '<a href="' + detail[j] + data[i][j] + '">' + data[i][j] + '</a>';
+                else
+                    item = data[i][j];
+            }
+
 
             row.push(item);
         }

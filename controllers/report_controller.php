@@ -75,17 +75,10 @@ class Report_Controller extends Report_Engine_Controller
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        // Non-intuitive.  See _index()
-
-        if (empty($key))
-            $report_name = strtolower(get_class($this));
-        else
-            $report_name = $key;
-
         // Initialize report data
         //-----------------------
 
-        $report_info = $this->_get_report_info($report_name);
+        $report_info = $this->_get_report_info($key);
 
         // Load dependencies
         //------------------
@@ -106,7 +99,7 @@ class Report_Controller extends Report_Engine_Controller
                 );
             } else {
                 $data = $this->$library->$method(
-                    $report_info['key_value'],
+                    $key,
                     $this->session->userdata('report_range')
                 );
             }
@@ -131,27 +124,10 @@ class Report_Controller extends Report_Engine_Controller
 
     function _index($key, $type)
     {
-        // Non-intuitive.
-        //
-        // Some reports are keyed on a value.  For example,
-        // the "Network Report" passes the value of the network interface 
-        // (eth0, eth1, etc).  Other reports do not require key values, for
-        // example, the "System Load" is just that... the system load.
-        //
-        // In addition, we can automatically detect the special "overview"
-        // report -- the "app" basename will match the controller class.
-
-        if ($this->report_info['app'] === strtolower(get_class($this)))
-            $report_name = 'overview';  // FIXME: make this a constant?
-        else if (empty($key))
-            $report_name = strtolower(get_class($this));
-        else
-            $report_name = $key;
-
         // Initialize report data
         //-----------------------
 
-        $report_info = $this->_get_report_info($report_name);
+        $report_info = $this->_get_report_info($key);
 
         // Load dependencies
         //------------------
@@ -184,6 +160,8 @@ class Report_Controller extends Report_Engine_Controller
 
         try {
             $data['report'] = $report_info;
+            $data['report']['key_value'] = $key;
+            $data['report']['url'] = $this->uri->uri_string();
 
             $data['range'] = $this->session->userdata('report_range');
             $data['ranges'] = $this->report_driver->get_date_ranges();
@@ -197,7 +175,7 @@ class Report_Controller extends Report_Engine_Controller
         // Load views
         //-----------
 
-        if ($report_name === 'overview') // See FIXME about constant (above)
+        if ($report_info['report'] === 'overview') // See FIXME about constant (above)
             $this->page->view_reports($report_info['dashboards'], $data, $title);
         else
             $this->page->view_report($type, $data, $title, $options);
@@ -209,12 +187,29 @@ class Report_Controller extends Report_Engine_Controller
      * @param string $report report name
      */
 
-    function _get_report_info($report)
+    function _get_report_info($key)
     {
-        try {
-            $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
+        $this->load->library($this->report_info['app'] . '/' . $this->report_info['library']);
 
-            $ci_library = strtolower($this->report_info['library']);
+        $ci_library = strtolower($this->report_info['library']);
+
+        // Non-intuitive.
+        //
+        // Some reports are keyed on a value.  For example,
+        // the "Network Report" passes the value of the network interface 
+        // (eth0, eth1, etc).  Other reports do not require key values, for
+        // example, the "System Load" is just that... the system load.
+        //
+        // In addition, we can automatically detect the special "overview"
+        // report -- the "app" basename will match the controller class.
+
+        try {
+            if ($this->report_info['app'] === strtolower(get_class($this)))
+                $report = 'overview';  // FIXME: make this a constant?
+            else if ($this->$ci_library->report_exists($key))
+                $report = $key;
+            else
+                $report = strtolower(get_class($this));
 
             $report_info = $this->$ci_library->get_report_info($report);
         } catch (Exception $e) {
