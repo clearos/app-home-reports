@@ -338,8 +338,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 renderer: jQuery.jqplot.BarRenderer,
                 rendererOptions: {
                     barDirection: 'vertical'
-                },
-                pointLabels: { show: true, location: 'e', edgeTolerance: -15 },
+                }
             },
             axesDefaults: {
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
@@ -390,6 +389,10 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
 
 function create_table(report_id, header, data_type, data, format, detail) {
     var table = $('#' + report_id + '_table').dataTable();
+
+    // Bail if no data table exists (e.g. dashboard only shows a chart)
+    if ($('#' + report_id + '_table').val() == undefined)
+        return;
 
     table.fnClearTable();
 
