@@ -52,7 +52,7 @@ foreach ($report['urls'] as $url => $title)
 // Form
 ///////////////////////////////////////////////////////////////////////////////
 
-echo form_open($report['url'], array('id' => 'report_form'));
+echo form_open($report['form'], array('id' => 'report_form'));
 echo form_header(lang('home_reports_home_reports')); 
 
 echo fieldset_header(lang('base_filter'));

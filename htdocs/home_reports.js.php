@@ -143,11 +143,6 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
 
     var series = new Array();
 
-/*
-    for (i = 0; i < header.length - 1; i++)
-        series[i] = new Array();
-*/
-
     // Calculated mins/maxes
     //----------------------
 
@@ -185,6 +180,8 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
 
             if (chart_type == 'bar')
                 series[j-1].push([x_item, data[i][j]]);
+            else if (chart_type == 'horizontal_bar')
+                series[j-1].unshift([data[i][j], x_item]); 
             else
                 series[j-1].unshift([x_item, data[i][j]]);
 
@@ -205,21 +202,28 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     //-------------------------
 
     // Round max values
+    series_calculated_max = series_calculated_max * 1.1; // 10% buffer
+
     var tens_string = String(Math.round(series_calculated_max));
     var tens = tens_string.length - 1;
     series_calculated_max = Math.ceil(series_calculated_max / Math.pow(10,tens)) * Math.pow(10,tens);
 
     var baseline_min = (format.baseline_min) ? format.baseline_min : baseline_calculated_min;
     var baseline_max = (format.baseline_max) ? format.baseline_max : baseline_calculated_max;
-    var baseline_label = (format.baseline_label) ? format.baseline_label : ''; // FIXME: translate
-    var baseline_format = '%b %e %H:%M'; // FIXME
+    var baseline_label = (format.baseline_label) ? format.baseline_label : '';
+    var baseline_format = (format.baseline_format) ? format.baseline_format : '';
 
     var series_min = (format.series_min) ? format.series_min : series_calculated_min;
     var series_max = (format.series_max) ? format.series_max : series_calculated_max;
     var series_label = (format.series_label) ? format.series_label : '';
-    var series_format = (format.series_units) ? '%s ' + format.series_units : '%s';
+    var series_format = (format.series_format) ? format.series_format : '%s';
 
     var legend_labels = Array();
+
+    // If "timestamp" is specified as the format, use the following
+    // TODO: would be nice to have a different format for days only
+    if (baseline_format == 'timestamp')
+        baseline_format = '%b %e %H:%M';
 
     // Legend - show all headers unless specific series is specified
     //--------------------------------------------------------------
@@ -259,6 +263,17 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                     sliceMargin: 8,
                     dataLabels: 'value'
                 }
+            },
+            highlighter: {
+                lineWidthAdjust: 9.5,
+                sizeAdjust: 5,
+                showTooltip: true,
+                fadeTooltip: true,
+                formatString: '%s', 
+                useAxesFormatters: false,
+                tooltipFadeSpeed: 'slow',
+                tooltipLocation: 's',
+                tooltipSeparator: ' - '
             }
         });
 
@@ -292,7 +307,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 labelOptions: {
-                    fontSize: '10pt'
+                    fontSize: '8pt'
                 },
                 tickOptions: {
                     fontSize: '8pt'
@@ -320,10 +335,70 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                     }
                 }
             },
+            highlighter: {
+                lineWidthAdjust: 9.5,
+                sizeAdjust: 5,
+                showTooltip: true,
+                fadeTooltip: true,
+                tooltipFadeSpeed: 'slow',
+                tooltipLocation: 'n',
+                tooltipSeparator: ' - '
+            },
         });
 
-    // Bar chart
-    //----------
+    // Horizontal Bar Chart
+    //---------------------
+
+    } else if (chart_type == 'horizontal_bar') {
+        var chart = jQuery.jqplot (chart_id, series,
+        {
+            animate: !$.jqplot.use_excanvas,
+            legend: {
+                show: true,
+                location: 'e',
+                labels: legend_labels
+            },
+            seriesDefaults: {
+                renderer: jQuery.jqplot.BarRenderer,
+                rendererOptions: {
+                    barDirection: 'horizontal'
+                },
+                pointLabels: { show: true }
+            },
+            axesDefaults: {
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
+                labelOptions: {
+                    fontSize: '8pt'
+                },
+            },
+            axes: {
+                xaxis: {
+                    label: series_label,
+                    min: series_min,
+                    max: series_max,
+                    tickOptions:{
+                        formatString: series_format,
+                        fontSize: '7pt',
+                        angle: -30
+                    }
+                },
+                yaxis: {
+                    renderer: $.jqplot.CategoryAxisRenderer,
+                    label: baseline_label,
+                    tickOptions: {
+                        formatString: series_format,
+                        fontSize: '8pt'
+                    }
+                }
+            },
+            highlighter: {
+                show: false
+            }
+        });
+
+    // Vertical Bar Chart
+    //---------------------
 
     } else {
         var chart = jQuery.jqplot (chart_id, series,
@@ -344,11 +419,8 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 labelOptions: {
-                    fontSize: '10pt'
-                },
-                tickOptions: {
                     fontSize: '8pt'
-                }
+                },
             },
             axes: {
                 xaxis: {
@@ -358,19 +430,25 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                     renderer: $.jqplot.CategoryAxisRenderer,
                     tickOptions: {
                         formatString: baseline_format,
+                        fontSize: '7pt',
                         angle: -30
                     },
                 },
                 yaxis: {
+                    label: series_label,
                     min: series_min,
                     max: series_max,
                     labelOptions: {
                         angle: -90
                     },
                     tickOptions:{
-                        formatString: series_format
+                        formatString: series_format,
+                        fontSize: '8pt',
                     }
                 }
+            },
+            highlighter: {
+                show: false
             }
         });
     }
