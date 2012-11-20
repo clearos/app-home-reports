@@ -479,6 +479,7 @@ function create_table(report_id, header, data_type, data, format, detail) {
 
         for (j = 0; j < data[i].length; j++) {
             // IP addresses need special handling for sorting
+            var item = '';
             if (data_type[j] == 'ip') {
                 var hidden_item = '<span style="display: none">' + data[i][j] + '</span>';
                 if (detail[j])
