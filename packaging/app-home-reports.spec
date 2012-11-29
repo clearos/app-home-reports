@@ -1,7 +1,7 @@
 
 Name: app-home-reports
 Epoch: 1
-Version: 1.4.4
+Version: 1.4.6
 Release: 1%{dist}
 Summary: Home Reports
 License: GPLv3
