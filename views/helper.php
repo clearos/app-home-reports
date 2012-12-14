@@ -54,6 +54,7 @@ foreach ($report['urls'] as $url => $title)
 
 echo form_open($report['form'], array('id' => 'report_form'));
 echo form_header(lang('home_reports_home_reports')); 
+echo form_banner(lang('home_reports_banner'));
 
 echo fieldset_header(lang('base_filter'));
 echo field_dropdown('report_range', $ranges, $range, lang('reports_date_range'));

@@ -20,6 +20,7 @@ $app['description'] = lang('home_reports_app_description');
 $app['name'] = lang('home_reports_app_name');
 $app['category'] = lang('base_category_reports');
 $app['subcategory'] = lang('base_subcategory_settings');
+$app['menu_enabled'] = FALSE;
 
 /////////////////////////////////////////////////////////////////////////////
 // Packaging
