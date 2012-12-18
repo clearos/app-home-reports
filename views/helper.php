@@ -42,7 +42,7 @@ $this->lang->load('home_reports');
 
 $unique_key = $report['app'] . '_' . $report['report'];
 
-// FIXME remove HTML (add a field_simple_view function?)
+// TODO remove HTML (add a field_simple_view function?)
 $urls = '';
 
 foreach ($report['urls'] as $url => $title)

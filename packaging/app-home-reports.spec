@@ -1,7 +1,7 @@
 
 Name: app-home-reports
 Epoch: 1
-Version: 1.4.6
+Version: 1.4.8
 Release: 1%{dist}
 Summary: Home Reports
 License: GPLv3
@@ -14,7 +14,7 @@ Requires: app-base
 Requires: app-reports >= 1:1.4.2
 
 %description
-Welcome to the Home Reports app!  The reports are designed to be useful in home environments.
+The Home Reports driver is designed for home environments.
 
 %package core
 Summary: Home Reports - Core
@@ -24,7 +24,7 @@ Requires: app-base-core
 Requires: app-reports-core >= 1:1.4.2
 
 %description core
-Welcome to the Home Reports app!  The reports are designed to be useful in home environments.
+The Home Reports driver is designed for home environments.
 
 This package provides the core API and libraries.
 
