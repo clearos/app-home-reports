@@ -48,7 +48,7 @@
 class Home_Reports extends ClearOS_Controller
 {
     /**
-     * PPTPd settings controller
+     * Home reports controller.
      *
      * @return view
      */
