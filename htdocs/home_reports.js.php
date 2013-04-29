@@ -73,14 +73,15 @@ $(document).ready(function() {
     var report_list = $("input[id^='clearos_report']");
 
     $.each(report_list, function(index, value) {
-        var id_prefix = $(value).val();
+        var report_id = $(value).val();
+
+        id_prefix = report_id.replace(/(:|\.)/g,'\\$1');
 
         var app = $("#" + id_prefix + "_app_name").val();
         var report_basename = $("#" + id_prefix + "_basename").val();
         var report_key = $("#" + id_prefix + "_key_value").val();
-        var report_id = id_prefix;
 
-        $("#" + report_id + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // TODO - merge HTML
+        $("#" + id_prefix + "_chart").html('<br><p align="center"><span class="theme-loading-normal">' + lang_loading + '</span></p><br>'); // TODO - merge HTML
 
         generate_report(app, report_basename, report_key, report_id);
     });
@@ -134,9 +135,11 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     // Chart GUI details
     //------------------
 
-    var chart_id = report_id + '_chart';
-    var chart_type = $("#" + report_id + "_chart_type").val();
-    var chart_loading = $("#" + report_id + "_chart_loading_id").val();
+    var id_prefix = report_id.replace(/(:|\.)/g,'\\$1');
+
+    var chart_id = id_prefix + '_chart';
+    var chart_type = $("#" + id_prefix + "_chart_type").val();
+    var chart_loading = $("#" + id_prefix + "_chart_loading_id").val();
 
     // Series raw data
     //----------------
@@ -160,11 +163,11 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     var rows = (data.length > baseline_data_points) ? baseline_data_points : data.length;
 
     if (rows == 0) {
-        $("#" + report_id + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
+        $("#" + id_prefix + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
         return;
     }
 
-    $("#" + report_id + "_chart").html('');
+    $("#" + id_prefix + "_chart").html('');
 
     for (i = 0; i < rows; i++) {
         // Pie charts can only show one series
@@ -456,7 +459,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     // Hide the whirly and draw the chart
     //-----------------------------------
 
-    $("#" + report_id + "_chart_loading_id").hide();
+    $("#" + id_prefix + "_chart_loading_id").hide();
 
     chart.redraw();
 }
@@ -466,10 +469,12 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
  */
 
 function create_table(report_id, header, data_type, data, format, detail) {
-    var table = $('#' + report_id + '_table').dataTable();
+    var id_prefix = report_id.replace(/(:|\.)/g,'\\$1');
+
+    var table = $('#' + id_prefix + '_table').dataTable();
 
     // Bail if no data table exists (e.g. dashboard only shows a chart)
-    if ($('#' + report_id + '_table').val() == undefined)
+    if ($('#' + id_prefix + '_table').val() == undefined)
         return;
 
     table.fnClearTable();
