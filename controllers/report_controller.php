@@ -5,9 +5,9 @@
  *
  * The meat and potatoes are in reports/controllers/report_core_controller.php.
  *
- * @category   Apps
- * @package    Home_Reports
- * @subpackage Controllers
+ * @category   apps
+ * @package    home-reports
+ * @subpackage controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
@@ -44,9 +44,9 @@ require_once clearos_app_base('reports') . '/controllers/report_engine_controlle
 /**
  * Home reports engine controller.
  *
- * @category   Apps
- * @package    Home_Reports
- * @subpackage Controllers
+ * @category   apps
+ * @package    home-reports
+ * @subpackage controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
