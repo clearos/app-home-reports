@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Report ajax helpers.
+ * Home report ajax helpers.
  *
  * @category   apps
  * @package    home-reports
  * @subpackage javascript
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2012 ClearFoundation
+ * @copyright  2012-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/home_reports/
  */
@@ -52,6 +52,9 @@ header('Content-Type:application/x-javascript');
 ///////////////////////////////////////////////////////////////////////////
 // M A I N
 ///////////////////////////////////////////////////////////////////////////
+
+// Report data is a global variable - no need to refetch data on plot redrawing
+var report_data = new Array();
 
 $(document).ready(function() {
 
@@ -98,27 +101,28 @@ function generate_report(app, report_basename, report_key, report_id) {
         method: 'GET',
         dataType: 'json',
         success : function(payload) {
-            var header = payload.header;
-            var data_type = payload.type;
-            var data = new Array();
-            var detail = new Array();
-            var format = new Array();
-            var chart_series = new Array();
+        
+            // Throw report data into our global variable
+            report_data[report_id] = new Array();
+            report_data[report_id].header = payload.header;
+            report_data[report_id].data_type = payload.type;
+            report_data[report_id].data = (payload.data) ? payload.data : new Array();
+            report_data[report_id].detail = (payload.detail) ? payload.detail : new Array();
+            report_data[report_id].format = (payload.format) ? payload.format : new Array();
+            report_data[report_id].chart_series = (payload.chart_series) ? payload.chart_series : new Array();
+            report_data[report_id].series_sort = (payload.series_sort) ? payload.series_sort : 'desc';
 
-            if (payload.data)
-                data = payload.data;
+            // If first series is a timestamp, highlight it.  Otherwise, highlight the second series.
+            if (payload.series_highlight)
+                 report_data[report_id].series_highlight = payload.series_highlight;
+            else if (payload.type[0] == 'timestamp')
+                 report_data[report_id].series_highlight = 0;
+            else
+                 report_data[report_id].series_highlight = 1;
 
-            if (payload.detail)
-                detail = payload.detail;
-
-            if (payload.format)
-                format = payload.format;
-
-            if (payload.chart_series)
-                chart_series = payload.chart_series;
-
-            create_chart(report_id, header, data_type, data, format, detail, chart_series);
-            create_table(report_id, header, data_type, data, format, detail);
+            // Draw the chart and load the data table
+            create_chart(report_id);
+            create_table(report_id);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             // TODO window.setTimeout(generate_report, 3000);
@@ -130,7 +134,19 @@ function generate_report(app, report_basename, report_key, report_id) {
  * Creates chart.
  */
 
-function create_chart(report_id, header, data_type, data, format, detail, chart_series) {
+function create_chart(report_id) {
+
+    // Map report data to easier to read local variables
+    //--------------------------------------------------
+
+    var header = report_data[report_id].header;
+    var data_type = report_data[report_id].data_type;
+    var data = report_data[report_id].data;
+    var format = report_data[report_id].format;
+    var detail = report_data[report_id].detail;
+    var series_highlight = report_data[report_id].series_highlight;
+    var series_sort = report_data[report_id].series_sort;
+    var chart_series = report_data[report_id].chart_series;
 
     // Chart GUI details
     //------------------
@@ -146,8 +162,8 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
 
     var series = new Array();
 
-    // Calculated mins/maxes
-    //----------------------
+    // Calculated mins/maxes to set the scale of the axes
+    //---------------------------------------------------
 
     var baseline_data_points = (format.baseline_data_points) ? format.baseline_data_points : 200;
     var baseline_calculated_min = 0;
@@ -160,33 +176,28 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     // - Select the x and y axes
     //-------------------------------------------------------
 
-    var rows = (data.length > baseline_data_points) ? baseline_data_points : data.length;
+    var data_points = (data.length > baseline_data_points) ? baseline_data_points : data.length;
 
-    if (rows == 0) {
+    if (data_points == 0) {
         $("#" + id_prefix + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
         return;
     }
 
     $("#" + id_prefix + "_chart").html('');
 
-    for (i = 0; i < rows; i++) {
-        // Pie charts can only show one series
-        series_number = (chart_type == 'pie') ? 2 : data[i].length;
+    for (i = 0; i < data.length; i++) {
+        series_number = data[i].length;
         x_item = convert_to_human(data[i][0], data_type[0]);
 
         for (j = 1; j < series_number; j++) {
-            if ((typeof chart_series[j] != 'undefined') && !chart_series[j])
-                continue;
-
             if (typeof series[j-1] == 'undefined')
                 series[j-1] = new Array();
 
-            if (chart_type == 'bar')
-                series[j-1].push([x_item, data[i][j]]);
-            else if (chart_type == 'horizontal_bar')
-                series[j-1].unshift([data[i][j], x_item]); 
+            // Jqlot: series format is reversed depending on chart type!
+            if (chart_type == 'horizontal_bar')
+                series[j-1].push([data[i][j], x_item]); 
             else
-                series[j-1].unshift([x_item, data[i][j]]);
+                series[j-1].push([x_item, data[i][j]]);
 
             if (data[i][j] < series_calculated_min)
                 series_calculated_min = data[i][j];
@@ -197,9 +208,28 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
             if ((i == 0) && (j == 1))
                 baseline_calculated_max = x_item;
         }
-    } 
+    }
 
-    baseline_calculated_min = data[rows-1][0];
+    baseline_calculated_min = data[data_points-1][0];
+
+    // Sort by value, javascript style
+    // Charts don't always need the full series in the chart, just the top X data_points
+    for (j = 1; j < series_number; j++) {
+        if (typeof series[j-1] == 'undefined') 
+            continue;
+
+        // Jqlot: again, series format is reversed depending on chart type!
+        if (chart_type == 'horizontal_bar') {
+            series[j-1].sort(function(a, b) {return b[0] - a[0]});
+            series[j-1] = series[j-1].slice(0, data_points);
+
+            // jqplot horizontal_bar seems to like listing in reverse?  Reverse order just for this chart
+            series[j-1].sort(function(a, b) {return a[0] - b[0]});
+        } else {
+            series[j-1].sort(function(a, b) {return b[1] - a[1]});
+            series[j-1] = series[j-1].slice(0, data_points);
+        }
+    }
 
     // Labels, axes and formats
     //-------------------------
@@ -230,14 +260,25 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
 
     // Legend - show all headers unless specific series is specified
     //--------------------------------------------------------------
+    // Note #1 - pie charts auto generate the legend
+    // Note #2 - legends are slightly different across charts
 
     if (typeof chart_series[0] == 'undefined') {
-        legend_labels = header;
-        legend_labels.shift();
+        if (chart_type == 'horizontal_bar') {
+            legend_labels.push(header[series_highlight]);
+        } else if (chart_type == 'bar') {
+            var series_highlight_workaround = (series_highlight == 0) ? 1 : series_highlight;
+            legend_labels.push(header[series_highlight_workaround]);
+        } else if ((chart_type == 'line') || (chart_type == 'timeline') || (chart_type == 'line_stack') || (chart_type == 'timeline_stack')) {
+            var series_highlight_workaround = (series_highlight == 0) ? 1 : series_highlight;
+            legend_labels.push(header[series_highlight_workaround]);
+        } else {
+            legend_labels.push(header[series_highlight+1]);
+        }
     } else {
         for (i = 1; i < chart_series.length; i++) {
             if (chart_series[i])
-                legend_labels.push(header[i]);
+               legend_labels.push(header[i]);
         }
     }
 
@@ -245,9 +286,15 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     //----------
 
     if (chart_type == 'pie') {
+        var seriesRenderer = function() {
+            var pie_series = Array();
+            pie_series[0] = series[series_highlight - 1];
+            return pie_series;
+        }
 
-        var chart = jQuery.jqplot (chart_id, series,
+        var chart = jQuery.jqplot (chart_id, [],
         {
+            dataRenderer: seriesRenderer,
             grid: {
                 gridLineColor: 'transparent',
                 background: 'transparent',
@@ -281,7 +328,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
         });
 
     // Line chart
-    //----------
+    //-----------
 
     } else if ((chart_type == 'line') || (chart_type == 'timeline') || (chart_type == 'line_stack') || (chart_type == 'timeline_stack')) {
         if ((chart_type == 'line') || (chart_type == 'timeline')) {
@@ -292,8 +339,16 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
             fill = true;
         }
 
-        var chart = jQuery.jqplot (chart_id, series,
+        var seriesRenderer = function() {
+            var line_series = Array();
+            var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
+            line_series[0] = series[series_number];
+            return line_series;
+        }
+
+        var chart = jQuery.jqplot (chart_id, [],
         {
+            dataRenderer: seriesRenderer,
             stackSeries: stack_series,
             legend: {
                 show: true,
@@ -314,6 +369,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 },
                 tickOptions: {
                     fontSize: '8pt'
+                    /* FIXME formatString: "%d" */
                 }
             },
             axes:{
@@ -329,7 +385,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 yaxis: {
                     label: series_label,
                     min: series_min,
-                    max: series_max,
+                    /* FIXME max: series_max, */
                     labelOptions: {
                         angle: -90
                     },
@@ -353,8 +409,15 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     //---------------------
 
     } else if (chart_type == 'horizontal_bar') {
-        var chart = jQuery.jqplot (chart_id, series,
+        var seriesRenderer = function() {
+            var bar_series = Array();
+            bar_series[0] = series[series_highlight - 1];
+            return bar_series;
+        }
+
+        var chart = jQuery.jqplot (chart_id, [],
         {
+            dataRenderer: seriesRenderer,
             animate: !$.jqplot.use_excanvas,
             legend: {
                 show: true,
@@ -379,7 +442,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 xaxis: {
                     label: series_label,
                     min: series_min,
-                    max: series_max,
+                    /* max: series_max, FIXME */
                     tickOptions:{
                         formatString: series_format,
                         fontSize: '7pt',
@@ -404,8 +467,16 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
     //---------------------
 
     } else {
-        var chart = jQuery.jqplot (chart_id, series,
+        var seriesRenderer = function() {
+            var bar_series = Array();
+            var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
+            bar_series[0] = series[series_number];
+            return bar_series;
+        }
+
+        var chart = jQuery.jqplot (chart_id, [],
         {
+            dataRenderer: seriesRenderer,
             animate: !$.jqplot.use_excanvas,
             legend: {
                 show: true,
@@ -440,7 +511,7 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
                 yaxis: {
                     label: series_label,
                     min: series_min,
-                    max: series_max,
+                    /* FIXME max: series_max, */
                     labelOptions: {
                         angle: -90
                     },
@@ -468,7 +539,22 @@ function create_chart(report_id, header, data_type, data, format, detail, chart_
  * Creates data table.
  */
 
-function create_table(report_id, header, data_type, data, format, detail) {
+function create_table(report_id) {
+
+    // Map report data to easier to read local variables
+    //--------------------------------------------------
+
+    var header = report_data[report_id].header;
+    var data_type = report_data[report_id].data_type;
+    var data = report_data[report_id].data;
+    var format = report_data[report_id].format;
+    var detail = report_data[report_id].detail;
+    var series_highlight = report_data[report_id].series_highlight;
+    var series_sort = report_data[report_id].series_sort;
+
+    // Generate table
+    //---------------
+
     var id_prefix = report_id.replace(/(:|\.)/g,'\\$1');
 
     var table = $('#' + id_prefix + '_table').dataTable();
@@ -498,14 +584,33 @@ function create_table(report_id, header, data_type, data, format, detail) {
                     item = data[i][j];
             }
 
-
             row.push(item);
         }
 
         table.fnAddData(row);
     }
 
+    table.fnSort( [ [series_highlight, series_sort] ] );
     table.fnAdjustColumnSizing();
+    table.bind('sort', function () { data_table_event( 'Sort', table, report_id ); })
+}
+
+// Sort event handler
+//-------------------
+
+function data_table_event(type, tableref, report_id) {
+    // Datatables internal store with sorting info
+    var sort_details = tableref.fnSettings().aaSorting;
+
+    var column = sort_details[0][0];
+    var direction = sort_details[0][1];
+
+    if (column > 0) {
+        report_data[report_id].series_highlight = column;
+        report_data[report_id].series_sort = direction;
+
+        create_chart(report_id);
+    }
 }
 
 /**
