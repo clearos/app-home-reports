@@ -1,7 +1,7 @@
 
 Name: app-home-reports
 Epoch: 1
-Version: 1.5.0
+Version: 1.5.31
 Release: 1%{dist}
 Summary: Home Reports
 License: GPLv3
@@ -73,7 +73,6 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/home_reports/packaging
-%exclude /usr/clearos/apps/home_reports/tests
 %dir /usr/clearos/apps/home_reports
 /usr/clearos/apps/home_reports/deploy
 /usr/clearos/apps/home_reports/language

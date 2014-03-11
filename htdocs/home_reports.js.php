@@ -339,16 +339,20 @@ function create_chart(report_id) {
             fill = true;
         }
 
-        
-        // var seriesRenderer = function() {
-        //    var line_series = Array();
-        //    var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
-        //    line_series[0] = series[series_number];
-        //    return line_series;
-        //}
+        var seriesRenderer = function() {
+            var line_series = Array();
+            if (series_highlight == 0) {
+                return series;
+            } else {
+                var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
+                line_series[0] = series[series_number];
+                return line_series;
+            }
+        }
 
         var chart = jQuery.jqplot (chart_id, series,
         {
+            dataRenderer: seriesRenderer,
             stackSeries: stack_series,
             legend: {
                 show: true,
