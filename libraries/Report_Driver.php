@@ -131,6 +131,7 @@ class Report_Driver extends Report_Engine
             self::RANGE_LAST_30_DAYS => lang('reports_last_30_days')
         );
 
+        // TODO: not in use, translations tags do not exist
         $this->month_names = array(
             '1' => lang('base_month_january'),
             '2' => lang('base_month_february'),
