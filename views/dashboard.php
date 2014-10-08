@@ -45,7 +45,7 @@ $options['action'] = button_set(
     array(anchor_custom('/app/' . $report['url'], lang('reports_full_report')))
 );
 
-echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);
+echo chart_widget($report['title'], "${unique_key}_chart", $options);
 echo "
     <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>
     <input type='hidden' id='${unique_key}_app_name' value='" . $report['app'] . "'>

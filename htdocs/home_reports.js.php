@@ -109,6 +109,7 @@ function generate_report(app, report_basename, report_key, report_id) {
             report_data[report_id].data = (payload.data) ? payload.data : new Array();
             report_data[report_id].detail = (payload.detail) ? payload.detail : new Array();
             report_data[report_id].format = (payload.format) ? payload.format : new Array();
+            report_data[report_id].units = (payload.units) ? payload.units : new Array();
             report_data[report_id].chart_series = (payload.chart_series) ? payload.chart_series : new Array();
             report_data[report_id].series_sort = (payload.series_sort) ? payload.series_sort : 'desc';
 
@@ -136,13 +137,14 @@ function generate_report(app, report_basename, report_key, report_id) {
 
 function create_chart(report_id) {
 
-    // Map report data to easier to read local variables
-    //--------------------------------------------------
+    // Map report data to local variables... just easier to read
+    //----------------------------------------------------------
 
     var header = report_data[report_id].header;
     var data_type = report_data[report_id].data_type;
     var data = report_data[report_id].data;
     var format = report_data[report_id].format;
+    var units = report_data[report_id].units;
     var detail = report_data[report_id].detail;
     var series_highlight = report_data[report_id].series_highlight;
     var series_sort = report_data[report_id].series_sort;
@@ -157,19 +159,10 @@ function create_chart(report_id) {
     var chart_type = $("#" + id_prefix + "_chart_type").val();
     var chart_loading = $("#" + id_prefix + "_chart_loading_id").val();
 
-    // Series raw data
-    //----------------
-
-    var series = new Array();
-
     // Calculated mins/maxes to set the scale of the axes
     //---------------------------------------------------
 
     var baseline_data_points = (format.baseline_data_points) ? format.baseline_data_points : 200;
-    var baseline_calculated_min = 0;
-    var baseline_calculated_max = 0;
-    var series_calculated_min = 0;
-    var series_calculated_max = 0;
 
     // Put the data into key/value pairs - required by jqplot
     // - Convert IP addresses
@@ -185,35 +178,32 @@ function create_chart(report_id) {
 
     $("#" + id_prefix + "_chart").html('');
 
+    // Create series data
+    //-------------------
+
+    var series = new Array();
+
     for (i = 0; i < data.length; i++) {
         series_number = data[i].length;
-        x_item = convert_to_human(data[i][0], data_type[0]);
+        x_item = clearos_human_readable(data[i][0], data_type[0]);
 
         for (j = 1; j < series_number; j++) {
+            // Create new series array
             if (typeof series[j-1] == 'undefined')
                 series[j-1] = new Array();
 
-            // Jqlot: series format is reversed depending on chart type!
-            if (chart_type == 'horizontal_bar')
-                series[j-1].push([data[i][j], x_item]); 
-            else
-                series[j-1].push([x_item, data[i][j]]);
+            // Convert timestamp (TODO: review)
+            if ((j == 1) && (data_type[j-1] == 'timestamp'))
+                x_item = new Date(x_item.replace(' ', 'T')).getTime();
 
-            if (data[i][j] < series_calculated_min)
-                series_calculated_min = data[i][j];
-
-            if (data[i][j] > series_calculated_max)
-                series_calculated_max = data[i][j];
-
-            if ((i == 0) && (j == 1))
-                baseline_calculated_max = x_item;
+            // Add data item
+            series[j-1].push([x_item, data[i][j]]);
         }
     }
 
-    baseline_calculated_min = data[data_points-1][0];
-
     // Sort by value, javascript style
     // Charts don't always need the full series in the chart, just the top X data_points
+/*
     for (j = 1; j < series_number; j++) {
         if (typeof series[j-1] == 'undefined') 
             continue;
@@ -230,313 +220,35 @@ function create_chart(report_id) {
             series[j-1] = series[j-1].slice(0, data_points);
         }
     }
+*/
 
     // Labels, axes and formats
     //-------------------------
 
-    // Round max values
-    series_calculated_max = series_calculated_max * 1.1; // 10% buffer
-
-    var tens_string = String(Math.round(series_calculated_max));
-    var tens = tens_string.length - 1;
-    series_calculated_max = Math.ceil(series_calculated_max / Math.pow(10,tens)) * Math.pow(10,tens);
-
-    var baseline_min = (format.baseline_min) ? format.baseline_min : baseline_calculated_min;
-    var baseline_max = (format.baseline_max) ? format.baseline_max : baseline_calculated_max;
-    var baseline_label = (format.baseline_label) ? format.baseline_label : '';
-    var baseline_format = (format.baseline_format) ? format.baseline_format : '';
-
-    var series_min = (format.series_min) ? format.series_min : series_calculated_min;
-    var series_max = (format.series_max) ? format.series_max : series_calculated_max;
-    var series_label = (format.series_label) ? format.series_label : '';
+    var series_title = (format.series_title) ? format.series_title : '';
     var series_format = (format.series_format) ? format.series_format : '%s';
 
-    var legend_labels = Array();
+    var series_labels = header;
+    series_labels.shift(); 
 
-    // If "timestamp" is specified as the format, use the following
-    // TODO: would be nice to have a different format for days only
-    if (baseline_format == 'timestamp')
-        baseline_format = '%b %e %H:%M';
+    // Call chart function
+    //--------------------
 
-    // Legend - show all headers unless specific series is specified
-    //--------------------------------------------------------------
-    // Note #1 - pie charts auto generate the legend
-    // Note #2 - legends are slightly different across charts
-
-    if (typeof chart_series[0] == 'undefined') {
-        if (chart_type == 'horizontal_bar') {
-            legend_labels.push(header[series_highlight]);
-        } else if (chart_type == 'bar') {
-            var series_highlight_workaround = (series_highlight == 0) ? 1 : series_highlight;
-            legend_labels.push(header[series_highlight_workaround]);
-        } else if ((chart_type == 'line') || (chart_type == 'timeline') || (chart_type == 'line_stack') || (chart_type == 'timeline_stack')) {
-            var series_highlight_workaround = (series_highlight == 0) ? 1 : series_highlight;
-            legend_labels.push(header[series_highlight_workaround]);
-        } else {
-            legend_labels.push(header[series_highlight+1]);
-        }
-    } else {
-        for (i = 1; i < chart_series.length; i++) {
-            if (chart_series[i])
-               legend_labels.push(header[i]);
-        }
-    }
-
-    // Pie chart
-    //----------
-
-    if (chart_type == 'pie') {
-        var seriesRenderer = function() {
-            var pie_series = Array();
-            pie_series[0] = series[series_highlight - 1];
-            return pie_series;
-        }
-
-        var chart = jQuery.jqplot (chart_id, [],
-        {
-            dataRenderer: seriesRenderer,
-            grid: {
-                gridLineColor: 'transparent',
-                background: 'transparent',
-                borderColor: 'transparent',
-                shadow: false
-            },
-            legend: {
-                show: true,
-                location: 'e',
-            },
-            seriesDefaults: {
-                renderer: jQuery.jqplot.PieRenderer,
-                shadow: true,
-                rendererOptions: {
-                    showDataLabels: true,
-                    sliceMargin: 8,
-                    dataLabels: 'value'
-                }
-            },
-            highlighter: {
-                lineWidthAdjust: 9.5,
-                sizeAdjust: 5,
-                showTooltip: true,
-                fadeTooltip: true,
-                formatString: '%s', 
-                useAxesFormatters: false,
-                tooltipFadeSpeed: 'slow',
-                tooltipLocation: 's',
-                tooltipSeparator: ' - '
-            }
-        });
-
-    // Line chart
-    //-----------
-
-    } else if ((chart_type == 'line') || (chart_type == 'timeline') || (chart_type == 'line_stack') || (chart_type == 'timeline_stack')) {
-        if ((chart_type == 'line') || (chart_type == 'timeline')) {
-            stack_series = false;
-            fill = false;
-        } else {
-            stack_series = true;
-            fill = true;
-        }
-
-        var seriesRenderer = function() {
-            var line_series = Array();
-            if (series_highlight == 0) {
-                return series;
-            } else {
-                var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
-                line_series[0] = series[series_number];
-                return line_series;
-            }
-        }
-
-        var chart = jQuery.jqplot (chart_id, series,
-        {
-            dataRenderer: seriesRenderer,
-            stackSeries: stack_series,
-            legend: {
-                show: true,
-                location: 'ne',
-                labels: legend_labels
-            },
-            seriesDefaults: { 
-                fill: fill,
-                shadow: true,
-                showMarker: false,
-                pointLabels: { show: false }
-            },
-            axesDefaults: {
-                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                labelOptions: {
-                    fontSize: '8pt'
-                },
-                tickOptions: {
-                    fontSize: '8pt'
-                    /* FIXME formatString: "%d" */
-                }
-            },
-            axes:{
-                xaxis: {
-                    label: baseline_label,
-                    min: baseline_min,
-                    max: baseline_max,
-                    renderer: $.jqplot.DateAxisRenderer,
-                    tickOptions:{
-                        formatString: baseline_format
-                    }
-                },
-                yaxis: {
-                    label: series_label,
-                    min: series_min,
-                    /* FIXME max: series_max, */
-                    labelOptions: {
-                        angle: -90
-                    },
-                    tickOptions:{
-                        formatString: series_format
-                    }
-                }
-            },
-            highlighter: {
-                lineWidthAdjust: 9.5,
-                sizeAdjust: 5,
-                showTooltip: true,
-                fadeTooltip: true,
-                tooltipFadeSpeed: 'slow',
-                tooltipLocation: 'n',
-                tooltipSeparator: ' - '
-            },
-        });
-
-    // Horizontal Bar Chart
-    //---------------------
-
-    } else if (chart_type == 'horizontal_bar') {
-        var seriesRenderer = function() {
-            var bar_series = Array();
-            bar_series[0] = series[series_highlight - 1];
-            return bar_series;
-        }
-
-        var chart = jQuery.jqplot (chart_id, [],
-        {
-            dataRenderer: seriesRenderer,
-            animate: !$.jqplot.use_excanvas,
-            legend: {
-                show: true,
-                location: 'e',
-                labels: legend_labels
-            },
-            seriesDefaults: {
-                renderer: jQuery.jqplot.BarRenderer,
-                rendererOptions: {
-                    barDirection: 'horizontal'
-                },
-                pointLabels: { show: true }
-            },
-            axesDefaults: {
-                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                labelOptions: {
-                    fontSize: '8pt'
-                },
-            },
-            axes: {
-                xaxis: {
-                    label: series_label,
-                    min: series_min,
-                    /* max: series_max, FIXME */
-                    tickOptions:{
-                        formatString: series_format,
-                        fontSize: '7pt',
-                        angle: -30
-                    }
-                },
-                yaxis: {
-                    renderer: $.jqplot.CategoryAxisRenderer,
-                    label: baseline_label,
-                    tickOptions: {
-                        formatString: series_format,
-                        fontSize: '8pt'
-                    }
-                }
-            },
-            highlighter: {
-                show: false
-            }
-        });
-
-    // Vertical Bar Chart
-    //---------------------
-
-    } else {
-        var seriesRenderer = function() {
-            var bar_series = Array();
-            var series_number = (series_highlight == 0) ? 0 : series_highlight - 1;
-            bar_series[0] = series[series_number];
-            return bar_series;
-        }
-
-        var chart = jQuery.jqplot (chart_id, [],
-        {
-            dataRenderer: seriesRenderer,
-            animate: !$.jqplot.use_excanvas,
-            legend: {
-                show: true,
-                location: 'ne',
-                labels: legend_labels
-            },
-            seriesDefaults: {
-                renderer: jQuery.jqplot.BarRenderer,
-                rendererOptions: {
-                    barDirection: 'vertical'
-                }
-            },
-            axesDefaults: {
-                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                labelOptions: {
-                    fontSize: '8pt'
-                },
-            },
-            axes: {
-                xaxis: {
-                    label: baseline_label,
-                    min: baseline_min,
-                    max: baseline_max,
-                    renderer: $.jqplot.CategoryAxisRenderer,
-                    tickOptions: {
-                        formatString: baseline_format,
-                        fontSize: '7pt',
-                        angle: -30
-                    },
-                },
-                yaxis: {
-                    label: series_label,
-                    min: series_min,
-                    /* FIXME max: series_max, */
-                    labelOptions: {
-                        angle: -90
-                    },
-                    tickOptions:{
-                        formatString: series_format,
-                        fontSize: '8pt',
-                    }
-                }
-            },
-            highlighter: {
-                show: false
-            }
-        });
-    }
+    theme_chart(
+        chart_id,
+        chart_type,
+        data,
+        format,
+        series,
+        series_labels,
+        units,
+        series_title
+    );
 
     // Hide the whirly and draw the chart
     //-----------------------------------
 
     $("#" + id_prefix + "_chart_loading_id").hide();
-
-    chart.redraw();
 }
 
 /**
@@ -545,67 +257,25 @@ function create_chart(report_id) {
 
 function create_table(report_id) {
 
-    // Map report data to easier to read local variables
-    //--------------------------------------------------
+    var table_id = report_id.replace(/(:|\.)/g,'\\$1') + '_table';
 
-    var header = report_data[report_id].header;
-    var data_type = report_data[report_id].data_type;
-    var data = report_data[report_id].data;
-    var format = report_data[report_id].format;
-    var detail = report_data[report_id].detail;
-    var series_highlight = report_data[report_id].series_highlight;
-    var series_sort = report_data[report_id].series_sort;
-
-    // Generate table
-    //---------------
-
-    var id_prefix = report_id.replace(/(:|\.)/g,'\\$1');
-
-    var table = $('#' + id_prefix + '_table').dataTable();
-
-    // Bail if no data table exists (e.g. dashboard only shows a chart)
-    if ($('#' + id_prefix + '_table').val() == undefined)
-        return;
-
-    table.fnClearTable();
-
-    for (i = 0; i < data.length; i++) {
-        var row = new Array();
-
-        for (j = 0; j < data[i].length; j++) {
-            // IP addresses need special handling for sorting
-            var item = '';
-            if (data_type[j] == 'ip') {
-                var hidden_item = '<span style="display: none">' + data[i][j] + '</span>';
-                if (detail[j])
-                    item = hidden_item + '<a href="' + detail[j] + long2ip(data[i][j]) + '">' + long2ip(data[i][j]) + '</a>';
-                else
-                    item = hidden_item + long2ip(data[i][j]);
-            } else {
-                if (detail[j])
-                    item = '<a href="' + detail[j] + data[i][j] + '">' + data[i][j] + '</a>';
-                else
-                    item = data[i][j];
-            }
-
-            row.push(item);
-        }
-
-        table.fnAddData(row);
-    }
-
-    table.fnSort( [ [series_highlight, series_sort] ] );
-    table.fnAdjustColumnSizing();
-    table.bind('sort', function () { data_table_event( 'Sort', table, report_id ); })
+    theme_summary_table_data(
+        table_id,
+        report_data[report_id].data,
+        report_data[report_id].data_type,
+        report_data[report_id].detail,
+        report_data[report_id].series_highlight,
+        report_data[report_id].series_sort,
+        report_id
+    );
 }
 
-// Sort event handler
-//-------------------
+// Data table sort event handler
+//------------------------------
 
-function data_table_event(type, tableref, report_id) {
+function clearos_report_trigger(type, tableref, report_id) {
     // Datatables internal store with sorting info
     var sort_details = tableref.fnSettings().aaSorting;
-
     var column = sort_details[0][0];
     var direction = sort_details[0][1];
 
@@ -615,33 +285,6 @@ function data_table_event(type, tableref, report_id) {
 
         create_chart(report_id);
     }
-}
-
-/**
- * Returns IP address in human-readable format.
- */
-
-// TODO: Not IPv6 friendly
-function long2ip(ip_long) {
-    var ip = ip_long%256;
-
-    for (var i = 3; i > 0; i--) { 
-        ip_long = Math.floor(ip_long/256);
-        ip = ip_long%256 + '.' + ip;
-    }
-
-    return ip;
-}
-
-/**
- * Converts a value to a human-readable format, e.g. integer IPs into quad-format
- */
-
-function convert_to_human(value, type) {
-    if (type == 'ip')
-        return long2ip(value);
-    else
-        return value;
 }
 
 // vim: ts=4 syntax=javascript

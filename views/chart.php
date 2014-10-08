@@ -31,7 +31,7 @@
 
 $unique_key = $report['app'] . '_' . $report['report'];
 
-echo chart_widget($report['title'], "<div id='${unique_key}_chart'></div>", $options);
+echo chart_widget($report['title'], "${unique_key}_chart", $options);
 
 echo "
     <input type='hidden' id='clearos_report_${unique_key}_basename' value='$unique_key'>

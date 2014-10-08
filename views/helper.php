@@ -41,12 +41,10 @@ $this->lang->load('home_reports');
 ///////////////////////////////////////////////////////////////////////////////
 
 $unique_key = $report['app'] . '_' . $report['report'];
-
-// TODO remove HTML (add a field_simple_view function?)
 $urls = '';
 
 foreach ($report['urls'] as $url => $title)
-    $urls .= "<tr><td colspan='2'> - <a href='$url'>$title</a></td></tr>";
+    $urls .= field_banner("- <a href='$url'>$title</a>");
 
 ///////////////////////////////////////////////////////////////////////////////
 // Form
