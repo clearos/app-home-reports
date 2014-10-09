@@ -234,7 +234,7 @@ function create_chart(report_id) {
     // Call chart function
     //--------------------
 
-    theme_chart(
+    clearos_chart(
         chart_id,
         chart_type,
         data,
@@ -259,7 +259,7 @@ function create_table(report_id) {
 
     var table_id = report_id.replace(/(:|\.)/g,'\\$1') + '_table';
 
-    theme_summary_table_data(
+    clearos_summary_table(
         table_id,
         report_data[report_id].data,
         report_data[report_id].data_type,
