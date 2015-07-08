@@ -201,27 +201,6 @@ function create_chart(report_id) {
         }
     }
 
-    // Sort by value, javascript style
-    // Charts don't always need the full series in the chart, just the top X data_points
-/*
-    for (j = 1; j < series_number; j++) {
-        if (typeof series[j-1] == 'undefined') 
-            continue;
-
-        // Jqlot: again, series format is reversed depending on chart type!
-        if (chart_type == 'horizontal_bar') {
-            series[j-1].sort(function(a, b) {return b[0] - a[0]});
-            series[j-1] = series[j-1].slice(0, data_points);
-
-            // jqplot horizontal_bar seems to like listing in reverse?  Reverse order just for this chart
-            series[j-1].sort(function(a, b) {return a[0] - b[0]});
-        } else {
-            series[j-1].sort(function(a, b) {return b[1] - a[1]});
-            series[j-1] = series[j-1].slice(0, data_points);
-        }
-    }
-*/
-
     // Labels, axes and formats
     //-------------------------
 
