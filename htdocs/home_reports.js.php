@@ -140,14 +140,13 @@ function create_chart(report_id) {
     // Map report data to local variables... just easier to read
     //----------------------------------------------------------
 
-    var header = report_data[report_id].header;
-    var data_type = report_data[report_id].data_type;
     var data = report_data[report_id].data;
-    var format = report_data[report_id].format;
-    var units = report_data[report_id].units;
-    var detail = report_data[report_id].detail;
+    var data_titles = report_data[report_id].header;
+    var data_types = report_data[report_id].data_type;
+    var options = report_data[report_id].format;
+    var data_units = report_data[report_id].units;
+
     var series_highlight = report_data[report_id].series_highlight;
-    var series_sort = report_data[report_id].series_sort;
     var chart_series = report_data[report_id].chart_series;
 
     // Chart GUI details
@@ -162,7 +161,7 @@ function create_chart(report_id) {
     // Calculated mins/maxes to set the scale of the axes
     //---------------------------------------------------
 
-    var baseline_data_points = (format.baseline_data_points) ? format.baseline_data_points : 200;
+    var baseline_data_points = (options.baseline_data_points) ? options.baseline_data_points : 200;
 
     // Put the data into key/value pairs - required by jqplot
     // - Convert IP addresses
@@ -178,38 +177,6 @@ function create_chart(report_id) {
 
     $("#" + id_prefix + "_chart").html('');
 
-    // Create series data
-    //-------------------
-
-    var series = new Array();
-
-    for (i = 0; i < data.length; i++) {
-        series_number = data[i].length;
-        x_item = clearos_human_readable(data[i][0], data_type[0]);
-
-        for (j = 1; j < series_number; j++) {
-            // Create new series array
-            if (typeof series[j-1] == 'undefined')
-                series[j-1] = new Array();
-
-            // Convert timestamp (TODO: review)
-            if ((j == 1) && (data_type[j-1] == 'timestamp'))
-                x_item = new Date(x_item.replace(' ', 'T')).getTime();
-
-            // Add data item
-            series[j-1].push([x_item, data[i][j]]);
-        }
-    }
-
-    // Labels, axes and formats
-    //-------------------------
-
-    var series_title = (format.series_title) ? format.series_title : '';
-    var series_format = (format.series_format) ? format.series_format : '%s';
-
-    var series_labels = header;
-    series_labels.shift(); 
-
     // Call chart function
     //--------------------
 
@@ -217,11 +184,10 @@ function create_chart(report_id) {
         chart_id,
         chart_type,
         data,
-        format,
-        series,
-        series_labels,
-        units,
-        series_title
+        data_titles,
+        data_types,
+        data_units,
+        options
     );
 
     // Hide the whirly and draw the chart
