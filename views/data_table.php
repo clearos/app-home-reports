@@ -41,6 +41,8 @@ $this->lang->load('reports');
 
 $unique_key = $report['app'] . '_' . $report['report'];
 
+echo "<div style='font-size: 80% !important'>";
+
 echo summary_table(
     lang('reports_report_data'),
     array(),
@@ -59,3 +61,5 @@ echo summary_table(
         'sorting-type' => $report['types'],
     )
 );
+
+echo "</div>";

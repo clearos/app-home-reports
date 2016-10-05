@@ -169,10 +169,16 @@ function create_chart(report_id) {
     //-------------------------------------------------------
 
     var data_points = (data.length > baseline_data_points) ? baseline_data_points : data.length;
+    var chart_data = data;
 
     if (data_points == 0) {
         $("#" + id_prefix + "_chart").html('<br><p align="center">Nothing to report...</p><br>'); // FIXME
         return;
+    } else if (data_points > 0) {
+        chart_data = [];
+        for (inx = 0; inx < data_points; inx++) {
+            chart_data.push(data[inx]);
+        }
     }
 
     $("#" + id_prefix + "_chart").html('');
@@ -183,7 +189,7 @@ function create_chart(report_id) {
     clearos_chart(
         chart_id,
         chart_type,
-        data,
+        chart_data,
         data_titles,
         data_types,
         data_units,
